@@ -1,1 +1,52 @@
-<mxfile host="app.diagrams.net" modified="2023-03-04T12:05:35.867Z" agent="5.0 (Windows)" version="20.8.23" etag="YKJsTwGcVB5PPQEkkzIQ" type="github"><diagram name="Page-1" id="0uLySRd697FRzdPYSLR3">UzV2zq1wL0osyPDNT0nNUTV2VTV2LsrPL4GwciucU3NyVI0MMlNUjV1UjYwMgFjVyA2HrCFY1qAgsSg1rwSLBiADYTaQg2Y1AA==</diagram></mxfile>
+<mxfile host="app.diagrams.net" modified="2023-03-04T12:20:28.141Z" agent="5.0 (Windows)" etag="mMNrX1lIgx-T-2OJswus" version="20.8.23" type="github">
+  <diagram name="Page-1" id="0uLySRd697FRzdPYSLR3">
+    <mxGraphModel dx="1221" dy="761" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-1" value="Main application database server" style="aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;spacingTop=3;image;image=img/lib/active_directory/database_server.svg;" vertex="1" parent="1">
+          <mxGeometry x="90" y="150" width="73.8" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-2" value="Symmetric key database server" style="aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;spacingTop=3;image;image=img/lib/active_directory/database_server.svg;imageBackground=#E6FFCC;" vertex="1" parent="1">
+          <mxGeometry x="640" y="150" width="73.8" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-3" value="Peerbrain main API" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#945DF2;gradientDirection=north;fillColor=#5A30B5;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.api_gateway;" vertex="1" parent="1">
+          <mxGeometry x="90" y="660" width="78" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-4" value="Symmetric key API" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;gradientDirection=north;fillColor=#60a917;strokeColor=#2D7600;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.api_gateway;fontColor=#33001A;" vertex="1" parent="1">
+          <mxGeometry x="650" y="660" width="78" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-5" value="Symmetric key Database: It will store a key-value pair with the username as the key and a list of the users password has and their unencrypted symmetric key as values.&lt;br&gt;&lt;br&gt;{&quot;username&quot; : [&quot;symmetric_key&quot; , &quot;password_hash:] }" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="290" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-6" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="180" y="670" as="sourcePoint" />
+            <mxPoint x="640" y="670" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-8" value="Person A requests a message Person B has posted. Main application verifies that the Person A and B are indeed friends and if so sends the Person A&#39;s public key, username, password hash and Person B&#39;s username to the symmetric key api. " style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="220" y="590" width="380" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-11" value="" style="endArrow=classic;html=1;rounded=0;fontColor=#33001A;" edge="1" parent="1" source="U8ta5b5KrhjTRB8xtLqo-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="420" as="sourcePoint" />
+            <mxPoint x="690" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-12" value="Symmetric key api compares Person A&#39;s password hash with his/her stored hash in DB. It can find this by using Person A&#39;s username. If the hashes don&#39;t match, it drops the request from the main API. &lt;br&gt;f they do match it uses Person B&#39;s username to encrypt Person B&#39;s symmetric key with Person A&#39;s public key. " style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#33001A;" vertex="1" parent="1">
+          <mxGeometry x="380" y="390" width="270" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-13" value="" style="endArrow=classic;html=1;rounded=0;fontColor=#33001A;exitX=0;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="U8ta5b5KrhjTRB8xtLqo-4" target="U8ta5b5KrhjTRB8xtLqo-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="480" as="sourcePoint" />
+            <mxPoint x="170" y="730" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="U8ta5b5KrhjTRB8xtLqo-14" value="The encrypted person B&#39;s symmetric key is then returned to the main API. This API can then return this to the client application on Person A&#39;s pc. The client app can then use it&#39;s private key to decrypt the symmetric key and read all the messages of their friend Person B." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#33001A;" vertex="1" parent="1">
+          <mxGeometry x="200" y="770" width="430" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
