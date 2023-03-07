@@ -12,3 +12,11 @@ client/todo.md
 server/Dockerfile
 server/endpoint_log.txt
 server/server_commands.md
+server/main.py
+client/backup-keys-dir/message.key
+client/keys/public_key.pem
+client/backup-keys-dir/private_key.pem
+client/backup-keys-dir/readme.txt
+client/backup-keys-dir/tata keys/message.key
+client/backup-keys-dir/tata keys/private_key.pem
+client/backup-keys-dir/tata keys/public_key.pem

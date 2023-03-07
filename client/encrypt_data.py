@@ -6,11 +6,23 @@ from cryptography.fernet import Fernet
 from typing import Union
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import logging
-
+from passlib.context import CryptContext
 import requests
 
 
 load_dotenv()
+
+#---PW ENCRYPT INIT---#
+pwd_context = CryptContext(schemes =["bcrypt"], deprecated="auto")
+#---#
+def gen_pw_hash(pw:str)->str:
+    """Function that will use the CryptContext module to generate and return a hashed version of our password"""
+    
+    return pwd_context.hash(pw)
+
+def verify_password(plain_text_pw:str, hash_pw:str)->bool:
+    """Returns True if password hash matches the plain text password. Returns False otherwise."""
+    return pwd_context.verify(plain_text_pw, hash_pw)
 
 # Generate a new RSA key pair for a client
 def generate_keypair()->tuple:
@@ -46,6 +58,14 @@ def detect_private_key()->bool:
         print("No local private key found.")
         return False
     
+def detect_public_key()->bool:
+    if os.path.exists(os.path.join(os.path.dirname(__file__), 'keys', 'public_key.pem')):
+        print("Found local public key.")
+        return True
+    else:
+        print("No local public key found.")
+        return False
+    
 #Load your private key after checking if one is available on your system    
 def load_private_key():
     if detect_private_key:
@@ -61,9 +81,22 @@ def load_private_key():
                 encryption_algorithm=serialization.NoEncryption()
                 )
             return private_key
+
+def load_public_key():
+    key_path = os.path.join(os.path.dirname(__file__), 'keys', 'public_key.pem')
+    with open(key_path, 'rb') as f:
+        key_data = f.read()
+        key = serialization.load_pem_public_key(
+            key_data
+        )
+        public_key = key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        return public_key
     
 #Save private key to local storage
-def save_private_key(private_key)->None:
+def save_private_key(private_key:bytes)->None:
     key_path = os.path.join(os.path.dirname(__file__), 'keys', 'private_key.pem')
     with open(key_path, 'wb') as f:
         f.write(private_key)
@@ -74,6 +107,17 @@ def save_private_key(private_key)->None:
     else:
         print("Private key not saved successfully, please try again!")
 
+def save_public_key(public_key: bytes) -> None:
+    key_path = os.path.join(os.path.dirname(__file__), 'keys', 'public_key.pem')
+    with open(key_path, 'wb') as f:
+        f.write(public_key)
+
+    reloaded_key = load_public_key()
+    if public_key == reloaded_key:
+        print("Public key saved successfully")
+    else:
+        print("Public key not saved successfully, please try again!")
+        
 def encrypt_message_symmetrical(message:str)-> bytes:
     try:
         symmetric_key = load_sym_key()
@@ -106,7 +150,6 @@ def decrypt_message(encrypted_message, encryption_sim_key):
     decrypted_message = decrypted_message.decode()
 
     # Print the decrypted message
-    #print(decrypted_message)
     return decrypted_message
 
 def generate_sym_key()->None:
@@ -122,7 +165,8 @@ def generate_sym_key()->None:
         print("Symmetric key saved successfully")
     else:
         print("Symmetric key not saved successfully, please try again!")
-    
+    return key
+
 def detect_sym_key()->bool:
     if os.path.exists(os.path.join(os.path.dirname(__file__), 'keys', 'message.key')):
         print("Found local sym key.")
@@ -130,9 +174,4 @@ def detect_sym_key()->bool:
     else:
         print("No local private sym found.")
         return False
-
-
-
-
-
 

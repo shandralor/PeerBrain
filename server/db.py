@@ -6,6 +6,7 @@ from typing import Union
 import os
 import json
 import logging
+import requests
 from pprint import pprint #pylint: disable=unused-import
 from uuid import uuid4
 from deta import Deta
@@ -170,32 +171,27 @@ def get_thoughts(username:str)->Union[dict, None]:
     """Function to find all thoughts that have the given username in its list. It will return a dictionary of 
     all the Thought objects that have the usernames username provided."""
     try:
-        result_list_thougts = []
+        result_list_thoughts = []
         results = THOUGHTS.fetch().items
         for thought in results:
-            # if username in thought["readers"]["username"]:
-            #     result_list_thougts.append(thought)
-            for reader in thought["readers"]:
-                if username in reader["username"]:
-                    result_list_thougts.append({"title":thought["title"], "content" : thought["content"], "rating" : thought["rating"], "encryption_info" : reader["encrypted_sym_key"]})
+            if username == thought["username"]:
+                result_list_thoughts.append({"title":thought["title"], "content" : thought["content"], "rating" : thought["rating"]})
                     
-        return json.dumps(result_list_thougts)
+        return json.dumps(result_list_thoughts)
         
     except Exception as error_message:
         logging.exception(error_message)
         return None
 
-def create_thought(username:str, title:str, content:str, readers:list )->None:
+def create_thought(username:str, title:str, content:str)->None:
     """Basic function to create a Thought. Will need refinement to handle encrypted data for the content field and probably an additional array
     to store all the versions of the encrypted symmetric key."""
     new_thought = {"username" : username,
                    "key" : str(uuid4()), 
                    "title" : title, 
                    "content" : content,
-                   "readers" : readers, 
                    "rating" : 0.0,
                    "creation_date": str(datetime.utcnow())
-                   
                    }
     
     try:
@@ -206,6 +202,8 @@ def create_thought(username:str, title:str, content:str, readers:list )->None:
 
 
 #---PUBLIC KEY FUNCTIONS---#
+
+#TO CHANGE TO REMOTE SERVER OR DELETE
 def get_public_key(username:str)->Union[bytes, None]:
     """Helper function to allow the endpoint to get a users public key from the database and use it to encrypt a symmetric key."""
     try:
@@ -216,7 +214,7 @@ def get_public_key(username:str)->Union[bytes, None]:
         print(error_message)
         return None
 
-
+#TO CHANGE TO REMOTE SERVER OR DELETE
 def upload_public_key(public_key:bytes, username:str)->Union[bool, None]:
     """Helper function to allow the endpoint to upload a provided public key string to the database. It will also use the get_public_key
     function to verify that the key in the database matches the original. Improvement needed on removing a public key that does not match the check
@@ -242,3 +240,58 @@ def upload_public_key(public_key:bytes, username:str)->Union[bool, None]:
         logging.exception(error_message)
         return None
     
+
+def send_keys_to_remote_server(public_key:str, symmetric_key:str, username:str, hashed_password:str)->Union[bool, None]:
+    """Helper function to allow the endpoint to upload a provided public key string to the database. It will also use the get_public_key
+    function to verify that the key in the database matches the original. Improvement needed on removing a public key that does not match the check
+    from the database again."""
+    
+    user_key_store = {
+        "username" : username,
+        "user_password_hash" : hashed_password,
+        "key_store" : {
+            "public_key" : public_key,
+            "symmetric_key" : symmetric_key
+        }
+    }
+    
+    url = os.getenv("SYM_KEY_API_URL")
+    url_suffix = "api/v1/user_key"
+    
+    headers = {
+    "Content-Type": "application/json",
+    "api-key": os.getenv("SYM_KEY_API_KEY"),
+    "x-api-key": os.getenv("SYM_KEY_X_API_KEY")
+    }
+    
+    response = requests.post(f"{url}{url_suffix}", headers=headers, json=user_key_store)
+    
+    if response.status_code == 200:
+        print("Keystore sent successfully to remote server.")
+    else:
+        print(f"Request to remote server failed with error code {response.status_code}")
+
+def get_encrypted_sym_key(username: str, user_password, friend_username:str):
+    
+    encrypted_sym_request = {
+        "username" : username,
+        "password" : user_password,
+        "friend_username" : friend_username
+    }
+    
+    url = os.getenv("SYM_KEY_API_URL")
+    url_suffix = "api/v1/user_keys"
+    
+    headers = {
+    "Content-Type": "application/json",
+    "api-key": os.getenv("SYM_KEY_API_KEY"),
+    "x-api-key": os.getenv("SYM_KEY_X_API_KEY")
+    }
+    
+    response = requests.post(f"{url}{url_suffix}", headers=headers, json=encrypted_sym_request)
+    data = response.json()
+    if response.status_code == 200:
+        print("Key received successfully from remote server.")
+        return data["Friend Symmetric Key"]
+    else:
+        print(f"Request to remote server failed with error code {response.status_code}")

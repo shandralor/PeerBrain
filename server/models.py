@@ -28,7 +28,6 @@ class Thought(BaseModel): # pylint: disable=too-few-public-methods
     key: Optional[UUID] = uuid4()
     title: str
     content: str
-    readers: List[Reader]
     rating: Optional[float] = 0.0
     creation_date: Optional[datetime]
 
@@ -49,4 +48,13 @@ class UserInDB(User): # pylint: disable=too-few-public-methods
 class PubKey(BaseModel): # pylint: disable=too-few-public-methods
     """Class defining our pub key"""
     pub_key: str
+
+class KeyStore(BaseModel): # pylint: disable=too-few-public-methods
+    pub_key : str
+    symmetric_key : str
+    
+class SymKeyRequest(BaseModel): # pylint: disable=too-few-public-
+    
+    user_password : str
+    friend_username : str
     

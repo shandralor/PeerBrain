@@ -11,9 +11,11 @@ import bcrypt
 import logging
 
 #---LOCAL IMPORTS---#
-from models import User, Thought, Token, TokenData, UserInDB, PubKey
+from models import User, Thought, Token, TokenData, UserInDB, PubKey, KeyStore, SymKeyRequest
+
 from db import get_thoughts, get_users, create_user, get_user_by_email, get_user_by_username, create_thought, get_thoughts, \
-    get_friends_by_username, add_friend, gen_pw_hash, change_password, get_public_key, upload_public_key
+    get_friends_by_username, add_friend, gen_pw_hash, change_password, get_public_key, upload_public_key, \
+        send_keys_to_remote_server, get_encrypted_sym_key
 
 #---LOAD ENV VARS---#
 load_dotenv()
@@ -161,12 +163,8 @@ async def create_new_thought(thought : Thought, current_user : User = Depends(ge
     username = thought.username
     title = thought.title
     content = thought.content
-    readers = [
-        {"username": reader.username, "encrypted_sym_key": reader.encrypted_sym_key}
-        for reader in thought.readers
-    ]
-    print(readers)
-    create_thought(current_user.username, title, content, readers)
+    
+    create_thought(current_user.username, title, content)
     
     return {"Thought" : "Successfully created!"}
 
@@ -175,22 +173,47 @@ async def read_users_me(current_user : User = Depends(get_current_active_user)):
     print_and_log("consulted his user details", current_user.username)
     return current_user
 
-@app.get("/api/v1/get_pub_key")
+@app.get("/api/v1/get_pub_key")#==>TO RETIRE?
 async def get_public_key_user( current_user : User = Depends(get_current_active_user)):
     pub_key = get_public_key(current_user.username)
     print_and_log("requested his/her pubkey", current_user.username)
     return {"PUBLIC KEY" : pub_key}
 
-@app.get("/api/v1/get_pub_key_friend/{friend_username}")
+@app.get("/api/v1/get_pub_key_friend/{friend_username}")#==>TO RETIRE?
 async def get_public_key_friend(friend_username: str, current_user : User = Depends(get_current_active_user)):
     pub_key = get_public_key(friend_username)
     print_and_log("requested his/her pubkey", friend_username)
     return {"PUBLIC KEY" : pub_key}
 
-@app.post("/api/v1/post_pub_key")
+@app.post("/api/v1/post_pub_key")#==>TO RETIRE?
 async def post_public_key_user(pubkey : PubKey,  current_user : User = Depends(get_current_active_user)):
     bytes_key = pubkey.pub_key
+    #symmetric_key = keystore.symmetric_key
     username = current_user.username
+    
     upload_public_key(bytes_key, username )
     print_and_log("uploaded his/her public key", current_user.username)
     return {"PUBLIC KEY" : "UPLOADED"}
+
+@app.post("/api/v1/post_key_store")
+async def post_keystore_user(keystore : KeyStore,  current_user : User = Depends(get_current_active_user)):
+    public_key = keystore.pub_key
+    symmetric_key = keystore.symmetric_key
+    username = current_user.username
+    hashed_password = get_user_by_username(username)["hashed_pw"]
+    
+    send_keys_to_remote_server(public_key, symmetric_key, username, hashed_password)
+    
+    print_and_log("uploaded his/her public key", current_user.username)
+    return {"PUBLIC KEY" : "UPLOADED"}
+
+@app.post("/api/v1/user_key_request")
+async def get_user_key_store(sym_key_req : SymKeyRequest, current_user : User = Depends(get_current_active_user)):
+    username = current_user.username
+    password = sym_key_req.user_password
+    friend_username = sym_key_req.friend_username
+    
+    if friend_username in get_friends_by_username(username).keys():
+        return get_encrypted_sym_key(username, password, friend_username)
+    else:
+        return {"Message" : "Error in getting the encrypted key"}
