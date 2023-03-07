@@ -17,8 +17,6 @@ from encrypt_data import generate_keypair, load_private_key, detect_private_key,
 #---VARIABLES---#
 login_headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-
-
 #---FUNCTIONS---#
 def login(server_url:str)->None:
     """Function that will check first if a token exists. Next it will check the validity 
@@ -77,6 +75,7 @@ def login(server_url:str)->None:
         print()
         print("Logged in successfully!")
         print()
+
 def get_token()->str:
     """Function to get the json token from a local json file called token.json"""
     with open("token.json", "r", encoding='utf-8') as file:
@@ -128,7 +127,6 @@ def get_public_key(server_url:str)->Union[bytes, None]:
     except requests.exceptions.RequestException as e:
         print(f"Error getting public key")
         return None
-
 def get_public_key_friend(server_url:str, friend_username:str)->Union[bytes, None]:
     """Function that returns account public key for the endpoint specified in the 
     account_url_suffix variable"""
@@ -224,9 +222,8 @@ def add_user_friends(server_url:str, friend_username:str):
 
 def register_user(server_url:str, username:str, user_email:str, user_password:str, friends:List[str]=[]):
     """function to return a list of all user friends."""
+   
     account_url_suffix = "api/v1/users"
-
-    
 
     payload = {
     'username': username,
@@ -234,7 +231,6 @@ def register_user(server_url:str, username:str, user_email:str, user_password:st
     'user_password': user_password,
     "friends" : friends,
     "disabled" : False
-    
     }
     
     print(payload)
@@ -281,7 +277,6 @@ def post_thought(server_url:str, username:str, title:str, encrypted_message:byte
         "content" : encrypted_message.decode("utf-8")        
     }
     
-       
     response = requests.post(f"{server_url}{account_url_suffix}", json = payload,  headers=headers, timeout=10)
  
 def get_sym_key(server_url:str, password:str, friend_username:str):
@@ -295,19 +290,19 @@ def get_sym_key(server_url:str, password:str, friend_username:str):
         "friend_username" : friend_username      
     }
     
-       
     response = requests.post(f"{server_url}{account_url_suffix}", json = payload,  headers=headers, timeout=10)    
     data = response.json()
     return data
+
 def main():
     """Display the main menu and prompt the user to choose an option."""    
     
     #server_url = "http://127.0.0.1:8000/"
-    server_url = "shttps://peerbrain.teckhawk.be/"
+    server_url = "https://peerbrain.teckhawk.be/"
     authenticated = False
 
     print()
-    print("Welcome to version 0.1 of the Brainwaves P2P client!")
+    print("Welcome to version 0.2 of the Brainwaves P2P client!")
     print("-------------------------------------------------------------------")
     print(f"The currently set server url is {server_url}")
     print("-------------------------------------------------------------------")
