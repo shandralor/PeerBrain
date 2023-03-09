@@ -28,13 +28,29 @@ KEYS = deta.Base("keys_db")
 pwd_context = CryptContext(schemes =["bcrypt"], deprecated="auto")
 #---#
 def gen_pw_hash(pw:str)->str:
-    """Function that will use the CryptContext module to generate and return a hashed version of our password"""
-    
+    """
+    Generate a hashed version of the password using the CryptContext module.
+
+    Args:
+        pw (str): The password to be hashed.
+
+    Returns:
+        str: The hashed version of the password.
+    """
+        
     return pwd_context.hash(pw)
 
 #---USER FUNCTIONS---#
 def get_users() -> dict:
-    """Function to return all users from our database"""
+    """Return a dictionary containing all users from the database.
+
+    Returns:
+        dict: A dictionary where the key is the username and the value is a dictionary containing
+        the user's information.
+
+    Raises:
+        Exception: If there is an error while fetching users from the database.
+    """
     try:
         return {user["username"]: user for user in USERS.fetch().items}
     except Exception as e:
@@ -43,8 +59,16 @@ def get_users() -> dict:
         return {}
 
 def get_user_by_username(username:str)->Union[dict, None]:
-    """Function that returns a User object if it is in the database. If not it returns a JSON object with the 
-    message no user exists for that username"""
+    """Return a user object if it exists in the database, otherwise return a JSON object with a message.
+
+    Args:
+        username (str): The username of the user to retrieve.
+
+    Returns:
+        Union[dict, None]: A dictionary containing user information if the user is found in the database.
+        If the user is not found, a dictionary containing a message indicating that no user exists for that username.
+        If an exception occurs during execution, None is returned.
+    """
     
     try:
         if (USERS.fetch({"username" : username}).items) == []:
@@ -202,44 +226,6 @@ def create_thought(username:str, title:str, content:str)->None:
 
 
 #---PUBLIC KEY FUNCTIONS---#
-
-#TO CHANGE TO REMOTE SERVER OR DELETE
-def get_public_key(username:str)->Union[bytes, None]:
-    """Helper function to allow the endpoint to get a users public key from the database and use it to encrypt a symmetric key."""
-    try:
-        retrieved_key = KEYS.get(f"{username}")["public key"]
-        new_public_key = retrieved_key.encode("utf-8")
-        return new_public_key
-    except Exception as error_message:
-        print(error_message)
-        return None
-
-#TO CHANGE TO REMOTE SERVER OR DELETE
-def upload_public_key(public_key:bytes, username:str)->Union[bool, None]:
-    """Helper function to allow the endpoint to upload a provided public key string to the database. It will also use the get_public_key
-    function to verify that the key in the database matches the original. Improvement needed on removing a public key that does not match the check
-    from the database again."""
-    pub_key = {"key" : username, 
-               "public key" : public_key}
-    try:
-        KEYS.put(pub_key)
-    except Exception as error_message:
-        logging.exception(error_message)
-        
-    try:
-        retrieved_key = get_public_key(username)
-        print(type(retrieved_key))
-        print(type(public_key))
-        if public_key.encode('utf-8')==retrieved_key:
-            print("Public key uploaded succesfully")
-            return True
-        else:
-            print("Public key upload corrupted, please try again!")
-            return False
-    except Exception as error_message:
-        logging.exception(error_message)
-        return None
-    
 
 def send_keys_to_remote_server(public_key:str, symmetric_key:str, username:str, hashed_password:str)->Union[bool, None]:
     """Helper function to allow the endpoint to upload a provided public key string to the database. It will also use the get_public_key

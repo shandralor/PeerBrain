@@ -21,11 +21,22 @@ def gen_pw_hash(pw:str)->str:
     return pwd_context.hash(pw)
 
 def verify_password(plain_text_pw:str, hash_pw:str)->bool:
-    """Returns True if password hash matches the plain text password. Returns False otherwise."""
+    """
+    Returns True if password hash matches the plain text password. Returns False otherwise.
+    """
+    
     return pwd_context.verify(plain_text_pw, hash_pw)
 
 # Generate a new RSA key pair for a client
 def generate_keypair()->tuple:
+    """
+    Generates a public-private key pair using RSA encryption algorithm.
+
+    Returns:
+    tuple: A tuple containing the public and private keys in bytes format.
+
+    """
+    
     key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048
@@ -43,7 +54,13 @@ def generate_keypair()->tuple:
     return public_key, private_key
 
 def load_sym_key()->bytes:
-     # Load the key from a file
+    """
+    Load a symmetric key from a file.
+    
+    Returns:
+        bytes: The symmetric key as bytes.
+    """
+    
     key_path = os.path.join(os.path.dirname(__file__), 'keys', 'message.key')
     with open(key_path, 'rb') as key_file:
         key = key_file.read()
@@ -51,6 +68,16 @@ def load_sym_key()->bytes:
 
 #Detect if a private key is available on your system        
 def detect_private_key()->bool:
+    """
+    Detects if a private key file named 'private_key.pem' exists in the 'keys' directory
+    located in the same directory as the current script. Returns True if the file exists,
+    and False otherwise.
+
+    Returns:
+        bool: True if a private key file named 'private_key.pem' exists in the 'keys' directory
+        located in the same directory as the current script, False otherwise.
+    """
+    
     if os.path.exists(os.path.join(os.path.dirname(__file__), 'keys', 'private_key.pem')):
         print("Found local private key.")
         return True
@@ -59,6 +86,13 @@ def detect_private_key()->bool:
         return False
     
 def detect_public_key()->bool:
+    """
+    Detects if a local public key file exists.
+
+    Returns:
+        bool: True if the file exists, False otherwise.
+    """
+    
     if os.path.exists(os.path.join(os.path.dirname(__file__), 'keys', 'public_key.pem')):
         print("Found local public key.")
         return True
@@ -68,6 +102,17 @@ def detect_public_key()->bool:
     
 #Load your private key after checking if one is available on your system    
 def load_private_key():
+    """
+    Loads a private key from the file system and returns it as bytes.
+
+    Returns:
+        bytes: The private key, in PEM format.
+
+    Raises:
+        FileNotFoundError: If the private key file cannot be found.
+        ValueError: If the private key file is invalid.
+    """
+    
     if detect_private_key:
         key_path = os.path.join(os.path.dirname(__file__), 'keys', 'private_key.pem')
         with open(key_path, 'rb') as f:
@@ -83,6 +128,11 @@ def load_private_key():
             return private_key
 
 def load_public_key():
+    """
+    Load a public key from a PEM-encoded file and return it as a bytes object.
+
+    return: The public key as a bytes object.
+    """
     key_path = os.path.join(os.path.dirname(__file__), 'keys', 'public_key.pem')
     with open(key_path, 'rb') as f:
         key_data = f.read()
@@ -97,6 +147,19 @@ def load_public_key():
     
 #Save private key to local storage
 def save_private_key(private_key:bytes)->None:
+    """
+    Save the private key to the keys directory as a PEM file.
+    
+    Args:
+    - private_key (bytes): The private key to be saved as bytes.
+
+    Returns:
+    - None: The function does not return any value.
+
+    Raises:
+    - None: The function does not raise any exceptions.
+    """
+    
     key_path = os.path.join(os.path.dirname(__file__), 'keys', 'private_key.pem')
     with open(key_path, 'wb') as f:
         f.write(private_key)
@@ -108,6 +171,16 @@ def save_private_key(private_key:bytes)->None:
         print("Private key not saved successfully, please try again!")
 
 def save_public_key(public_key: bytes) -> None:
+    """
+    Saves a public key to a file in PEM format.
+
+    Args:
+        public_key: A bytes object representing the public key.
+
+    Returns:
+        None
+    """
+    
     key_path = os.path.join(os.path.dirname(__file__), 'keys', 'public_key.pem')
     with open(key_path, 'wb') as f:
         f.write(public_key)
@@ -119,6 +192,16 @@ def save_public_key(public_key: bytes) -> None:
         print("Public key not saved successfully, please try again!")
         
 def encrypt_message_symmetrical(message:str)-> bytes:
+    """
+    This function encrypts a message using a symmetric key and returns the key and the encrypted message as bytes. 
+
+    param message: A string message to be encrypted.
+    
+
+    return: A tuple containing the symmetric key and the encrypted message as bytes.
+    
+    """
+
     try:
         symmetric_key = load_sym_key()
         # Create a Fernet object using the key
@@ -130,6 +213,17 @@ def encrypt_message_symmetrical(message:str)-> bytes:
         logging.exception(error_message)
 
 def decrypt_message(encrypted_message, encryption_sim_key):
+    """
+    Decrypts an encrypted message using a symmetric key that has been encrypted with a public key.
+
+    :param encrypted_message: The encrypted message bytes.
+    :type encrypted_message: bytes
+    :param encryption_sim_key: The encrypted symmetric key bytes.
+    :type encryption_sim_key: bytes
+    :return: The decrypted message string.
+    :rtype: str
+    """
+    
     private_key = serialization.load_pem_private_key(
     load_private_key(), password=None)
 
@@ -153,6 +247,15 @@ def decrypt_message(encrypted_message, encryption_sim_key):
     return decrypted_message
 
 def generate_sym_key()->None:
+    """
+    Generates a new symmetric encryption key using Fernet and saves it to a file.
+
+    Returns:
+        bytes: The generated symmetric key.
+
+    Raises:
+        OSError: If there is an issue writing the key to a file.
+    """
     # Generate a symmetric key
     key = Fernet.generate_key()
 
@@ -168,6 +271,13 @@ def generate_sym_key()->None:
     return key
 
 def detect_sym_key()->bool:
+    """
+    Checks if a local symmetric key exists and returns True if found, False otherwise.
+
+    Returns:
+    bool: True if a local symmetric key is found, False otherwise.
+    """
+    
     if os.path.exists(os.path.join(os.path.dirname(__file__), 'keys', 'message.key')):
         print("Found local sym key.")
         return True

@@ -109,43 +109,6 @@ def get_thoughts_for_user(server_url:str, username:str)->None:
 
     return json.loads(data)
 
-def get_public_key(server_url:str)->Union[bytes, None]:
-    """Function that returns account public key for the endpoint specified in the 
-    account_url_suffix variable"""
-    try:
-        account_url_suffix = "api/v1/get_pub_key"
-        headers = {"Authorization": f"Bearer {get_token()}"}
-        
-        response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        for key, value in data.items():
-            
-            return value
-        #return response.content
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting public key")
-        return None
-def get_public_key_friend(server_url:str, friend_username:str)->Union[bytes, None]:
-    """Function that returns account public key for the endpoint specified in the 
-    account_url_suffix variable"""
-    try:
-        account_url_suffix = "api/v1/get_pub_key_friend/"
-        headers = {"Authorization": f"Bearer {get_token()}"}
-        
-        response = requests.get(f"{server_url}{account_url_suffix}{friend_username}", headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        for key, value in data.items():
-            
-            return value
-        #return response.content
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting public key")
-        return None
-
 def upload_keystore(server_url:str, public_key:bytes, symmetric_key:bytes):
     """Function that uploads the generated public key to the endpoint specified in the 
     account_url_suffix variable"""
@@ -367,7 +330,7 @@ def main():
                     print()
                     print("1. Get all users.")
                     print("2. Generate SSH Keypair and symmetrical key(needed to create and read messages/tweets)")
-                    print("3. Check public key)")
+                    # print("3. Check public key)")
                     print("B to return to main menu")
                     
                     sub_choice = input(">> ")
@@ -386,8 +349,8 @@ def main():
                             save_public_key(public_key)
                             symmetric_key = generate_sym_key()
                             upload_keystore(server_url, public_key, symmetric_key)
-                    elif sub_choice == "3":
-                        print(get_public_key(server_url))
+                    # elif sub_choice == "3":
+                    #     print(get_public_key(server_url))
                     elif sub_choice == "B" or sub_choice=="b":
                         print("Returning to main menu...")
                         break        
