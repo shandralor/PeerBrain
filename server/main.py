@@ -17,7 +17,7 @@ from jose import JWTError, jwt
 from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB
 from db import add_friend, change_password, create_thought, create_user, \
     gen_pw_hash, get_encrypted_sym_key, get_friends_by_username, \
-        get_public_key, get_thoughts, get_user_by_email, \
+         get_thoughts, get_user_by_email, \
             get_user_by_username, get_users, send_keys_to_remote_server
                 
 
@@ -456,6 +456,7 @@ async def get_user_key_store(sym_key_req : SymKeyRequest, current_user : User = 
     password = sym_key_req.user_password
     friend_username = sym_key_req.friend_username
     
+        
     if friend_username in get_friends_by_username(username).keys():
         return get_encrypted_sym_key(username, password, friend_username)
     else:

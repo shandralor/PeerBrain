@@ -40,6 +40,7 @@ When everything runs fine as expected, you will see the menu as below:
 ![peerbrain2](https://user-images.githubusercontent.com/24318892/221877274-dc8420e6-36b2-4c20-be60-13669c9221bd.png)
 7. After successful login, you will be able to see the Main menu as below:
 ![peerbrain3](https://user-images.githubusercontent.com/24318892/221877324-690cecee-042e-4ea5-82a6-b7cbffdf622e.png)
+8. Make sure you have generated the keys prior exploring the application. To generate keys Navigate to Account details section, select generate the keys(2nd option).
 
 Congratulations :tada: and Thanks for making it till here. Please free feel to explore the application menu :relaxed:. Happy journey!
 

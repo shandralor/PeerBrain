@@ -278,6 +278,9 @@ def get_encrypted_sym_key(username: str, user_password, friend_username:str):
     data = response.json()
     if response.status_code == 200:
         print("Key received successfully from remote server.")
+        print(type(data["Friend Symmetric Key"]))
         return data["Friend Symmetric Key"]
     else:
         print(f"Request to remote server failed with error code {response.status_code}")
+
+
