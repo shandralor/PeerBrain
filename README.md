@@ -47,10 +47,14 @@ Congratulations :tada: and Thanks for making it till here. Please free feel to e
 
 ## Resources
 Here are some resources about this project:
-* https://youtu.be/GaQGfzTiHTc
+* [Finxter Youtube project start video](https://youtu.be/GaQGfzTiHTc)
 * [Git basics](https://www.freecodecamp.org/news/learn-the-basics-of-git-in-under-10-minutes-da548267cc91/)
 
-ARTICLE ON NAT HOLE PUNCHING
-https://bford.info/pub/net/p2pnat/
+* [Symmetric Key Exchange Server](https://github.com/shandralor/Symmetric-Key-Exchange)
+    -This server takes care of storing the symmetric keys and sending back the encrypted versions of these when a user wants to read a friends messages.
+    It is a part of this project but it doesn't share any resources with it. The two are separated to ensure the security of the symmetric keys.
+
+
 ------------------------------------------------------------------------------------------------
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
+[![GitHub issues](https://img.shields.io/github/issues-raw/shandralor/peerbrain?style=plastic)]
