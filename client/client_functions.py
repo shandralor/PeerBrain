@@ -71,7 +71,7 @@ def create_token(jwt_token:str)->None:
         data = {"token": jwt_token}
         json.dump(data, file)
 
-def get_account_info(server_url:str)->None:
+def get_account_info(server_url:str)->tuple:
     """Function that returns account details for the endpoint specified in the 
     account_url_suffix variable"""
     account_url_suffix = "api/v1/me"
@@ -79,7 +79,7 @@ def get_account_info(server_url:str)->None:
     response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, timeout=10)
     data = response.json()
 
-    return data['username'], data['email']
+    return (data['username'], data['email'])
 
 def get_sym_key(server_url:str, password:str, friend_username:str):
     """Function that uploads the encrypted symmetric key from the db"""
