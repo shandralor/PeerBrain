@@ -48,7 +48,10 @@ Congratulations :tada: and Thanks for making it till here. Please free feel to e
 ## Resources
 Here are some resources about this project:
 * [Finxter Youtube project start video](https://youtu.be/GaQGfzTiHTc)
+    -The video that started it all.
+    
 * [Git basics](https://www.freecodecamp.org/news/learn-the-basics-of-git-in-under-10-minutes-da548267cc91/)
+    -This article talks about how to use Git versioning, which comes in handy when working on open source projects.
 
 * [Symmetric Key Exchange Server](https://github.com/shandralor/Symmetric-Key-Exchange)
     -This server takes care of storing the symmetric keys and sending back the encrypted versions of these when a user wants to read a friends messages.
@@ -57,4 +60,4 @@ Here are some resources about this project:
 
 ------------------------------------------------------------------------------------------------
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
-[![GitHub issues](https://img.shields.io/github/issues-raw/shandralor/peerbrain?style=plastic)]
+![GitHub issues](https://img.shields.io/github/issues-raw/shandralor/peerbrain?style=plastic)

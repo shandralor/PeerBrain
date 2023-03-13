@@ -260,7 +260,9 @@ def login(server_url:str, username:str, password:str)->None:
     print()
     print("Logged in successfully!")
     print()
-
+        
+    return True
+    
 def login_with_token(server_url:str)->None:
     """Function that tries to log in with a token first. If the token is not valid or
     does not exist, it logs in with the provided username and password"""
@@ -272,3 +274,11 @@ def login_with_token(server_url:str)->None:
     
     # Token is not valid or does not exist, log in with username and password
     login(server_url, username, password)
+
+def log_out():
+    file_path = "token.json"  
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print("Logged out successfully!")
+    else:
+        print("You are not logged in!")   

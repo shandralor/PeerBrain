@@ -93,7 +93,7 @@ back_to_welcome_button_helper = """
 MDRectangleFlatButton: 
     text: "Back" 
     pos_hint: {"center_x" : 0.5,"center_y":0.2}
-    #on_release : app.log_in()
+    
 """
 #---CREATE USER---#
 new_username_helper = """
@@ -155,4 +155,68 @@ change_server_textfield = """
 MDTextField:
     id: server_textfield
     hint_text: "Enter new server"
+"""
+
+#---MAIN MENU SCREEN---#
+
+main_menu_label_helper = """
+MDLabel: 
+    text: "MAIN MENU:"
+    pos_hint: {"center_x" : 0.7,"center_y":0.9}                        
+    theme_text_color: "Custom"
+    text_color: (0,1,0, 1)
+    font_style: "H6"
+"""
+
+technical_menu_button_helper = """
+MDRectangleFlatButton:
+    text: "Technical Menu" 
+    pos_hint: {"center_x" : 0.5,"center_y":0.65}
+    #on_release : app.log_in_screen()
+"""
+
+user_account_button_helper = """
+MDRectangleFlatButton: 
+    text: "User Actions" 
+    pos_hint: {"center_x" : 0.5,"center_y":0.55}
+    #on_release : app.create_user_screen()
+"""
+
+logout_button_helper = """
+MDRectangleFlatButton: 
+    text: "Log Out" 
+    pos_hint: {"center_x" : 0.5,"center_y":0.45}
+    on_release : app.log_out_from_main_menu()
+"""
+
+
+#---TECHNICAL MENU SCREEN---#
+
+technical_menu_label_helper = """
+MDLabel: 
+    text: "TECHNICAL MENU:"
+    pos_hint: {"center_x" : 0.7,"center_y":0.9}                        
+    theme_text_color: "Custom"
+    text_color: (0,1,0, 1)
+    font_style: "H6"
+"""
+
+technical_menu_check_users_button_helper = """
+MDRectangleFlatButton:
+    text: "Show all users" 
+    pos_hint: {"center_x" : 0.5,"center_y":0.65}
+    #on_release : app.log_in_screen()
+"""
+
+technical_menu_generate_keys_button_helper = """
+MDRectangleFlatButton: 
+    text: "Generate keys" 
+    pos_hint: {"center_x" : 0.5,"center_y":0.55}
+    #on_release : app.create_user_screen()
+"""
+
+technical_menu_back_button_helper = """
+MDRectangleFlatButton: 
+    text: "Back to Main Menu" 
+    pos_hint: {"center_x" : 0.5,"center_y":0.45}
 """

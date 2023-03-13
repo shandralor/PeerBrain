@@ -15,7 +15,7 @@ from encrypt_data import generate_keypair, load_private_key, detect_private_key,
 
 from client_functions import create_token, get_token, get_account_info, get_sym_key, post_thought, register_user, \
     add_user_friends, get_user_friends, get_all_users, get_thoughts_for_user, wrap_encrypt_sym_key, upload_keystore, \
-        login_with_token
+        login_with_token, log_out
 
 
 def main():
@@ -217,14 +217,18 @@ def main():
                     else:
                         print("Invalid choice")
             elif choice == "3":
-                file_path = "token.json"  
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    print("Logged out successfully!")
-                    authenticated == False
-                    break
-                else:
-                    print("You are not logged in!")    
+                log_out()
+                authenticated == False
+                break
+
+                # file_path = "token.json"  
+                # if os.path.exists(file_path):
+                #     os.remove(file_path)
+                #     print("Logged out successfully!")
+                #     
+                #     break
+                # else:
+                #     print("You are not logged in!")    
             elif choice == "Q" or choice=="q":
                 print("Goodbye!")
                 break
