@@ -1,6 +1,6 @@
 import os
-import requests
 import json
+import requests
 from typing import List, Union
 
 from cryptography.hazmat.primitives import serialization, hashes
@@ -141,7 +141,7 @@ def add_user_friends(server_url:str, friend_username:str):
     
     return data
 
-def get_user_friends(server_url:str)->None:
+def get_user_friends(server_url:str)->tuple:
     """function to return a list of all user friends."""
     account_url_suffix = "api/v1/friends"
 
@@ -152,7 +152,7 @@ def get_user_friends(server_url:str)->None:
     data = response.json()
 
     usernames = []
-    for key, value in data.items():
+    for key in data.items():
         usernames.append(key)
         
     return tuple(usernames)
@@ -171,14 +171,13 @@ def get_all_users(server_url:str)->tuple:
     all_users = data.items()
     return all_users
 
-def get_thoughts_for_user(server_url:str, username:str)->None:
+def get_thoughts_for_user(server_url:str, username:str)->tuple:
     """Function that returns all thoughts that have the username in the reader's list for the endpoint specified in the 
     account_url_suffix variable"""
     account_url_suffix = "api/v1/thoughts"
     headers = {"Authorization": f"Bearer {get_token()}"}
     response = requests.get(f"{server_url}{account_url_suffix}/{username}", headers=headers, timeout=10)
     data = response.json()
-
     return json.loads(data)
 
 def wrap_encrypt_sym_key(sym_key:bytes, server_url:str, friend_username: Union[str, None] = None)->Union[str, bytes]:

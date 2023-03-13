@@ -1,21 +1,32 @@
 """Brainwaves cli client file"""
 import getpass
-import os
-import json
-import requests
 import base64
-from typing import List, Union
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from encrypt_data import generate_keypair, load_private_key, detect_private_key, \
-    save_private_key, encrypt_message_symmetrical, decrypt_message, generate_sym_key, load_sym_key, \
-        detect_sym_key, detect_public_key, save_public_key, load_public_key
+from encrypt_data import (
+    generate_keypair,
+    detect_private_key,
+    save_private_key,
+    encrypt_message_symmetrical,
+    decrypt_message,
+    generate_sym_key,
+    detect_sym_key,
+    detect_public_key,
+    save_public_key,
+)
 
-from client_functions import create_token, get_token, get_account_info, get_sym_key, post_thought, register_user, \
-    add_user_friends, get_user_friends, get_all_users, get_thoughts_for_user, wrap_encrypt_sym_key, upload_keystore, \
-        login_with_token, log_out
+from client_functions import (
+    get_account_info,
+    get_sym_key,
+    post_thought,
+    register_user,
+    add_user_friends,
+    get_user_friends,
+    get_all_users,
+    get_thoughts_for_user,
+    upload_keystore,
+    login_with_token,
+    log_out
+)
 
 
 def main():
@@ -163,10 +174,10 @@ def main():
                         print()
                         title = input("Please choose a title for your Thought: \n\n>>TITLE: ")                        
                         message = input("What would you like to post? : \n\nMESSAGE>>: ")
-                        sym_key, enc_mess = encrypt_message_symmetrical(message)
+                        enc_mess = bytes(encrypt_message_symmetrical(message))
                         print()
                         
-                        post_thought(server_url, username, title, enc_mess)                         
+                        post_thought(server_url, username, title, enc_mess)
                                      
                         print("Message uploaded successfully!")
                                             
@@ -174,7 +185,7 @@ def main():
                         get_user_friends(server_url)
                         print()
                         
-                        base_64_encr_sym_key = None
+                        base_64_encr_sym_key = str()
                         friend_username = ''
                         #error handling of faulty passwords
                         while type(base_64_encr_sym_key) != str or friend_username == None:

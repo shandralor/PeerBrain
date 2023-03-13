@@ -1,4 +1,4 @@
-cryptography==3.4.8
+cryptography
 deta==1.1.0
 requests==2.25.1
 fastapi==0.92.0
