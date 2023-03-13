@@ -59,7 +59,7 @@ def main():
                 user_password = getpass.getpass(prompt = "Please enter a password: ")
                 confirm_password = getpass.getpass(prompt = "Confirm your password: ")
                 if user_password == confirm_password:
-                    registration_result = register_user(server_url, username, user_email, user_password)
+                    registration_result = register_user(server_url, username.lower(), user_email, user_password)
                     print()
                     for key, value in registration_result:
                         print(f"{key} {value}")

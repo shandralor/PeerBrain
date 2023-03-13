@@ -20,3 +20,4 @@ client/backup-keys-dir/readme.txt
 client/backup-keys-dir/tata keys/message.key
 client/backup-keys-dir/tata keys/private_key.pem
 client/backup-keys-dir/tata keys/public_key.pem
+__pycache__/

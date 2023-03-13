@@ -11,7 +11,7 @@ import getpass
 #---VARIABLES---#
 login_headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-def log_in_to_server(username, password, server_url):
+def log_in_to_server(username:str, password:str, server_url):
 
     #--> Check if the token.json file exists in the current directory
     if os.path.exists("token.json"):
@@ -25,7 +25,7 @@ def log_in_to_server(username, password, server_url):
         #-->Token is present but no longer valid
         if response.status_code == 401:
             # Define the payload with the username and password
-            payload = {"username": username, "password": password}
+            payload = {"username": username.lower(), "password": password}
             login_response = requests.post(server_url, data=payload, timeout=10)
 
             # Extract the JWT token from the response
@@ -44,7 +44,7 @@ def log_in_to_server(username, password, server_url):
         #-->No token found, request a new one
         
         # Define the payload with the username and password
-        payload = {"username": username, "password": password}
+        payload = {"username": username.lower(), "password": password}
         # Make a POST request to the login endpoint with the payload
         login_response = requests.post(server_url, data=payload, headers=login_headers, timeout=10)
 
@@ -104,7 +104,7 @@ def post_thought(server_url:str, username:str, title:str, encrypted_message:byte
     headers = {"Authorization": f"Bearer {get_token()}"}
     
     payload={
-        "username" : username,
+        "username" : username.lower(),
         "title" : title,
         "content" : encrypted_message.decode("utf-8")        
     }
@@ -117,7 +117,7 @@ def register_user(server_url:str, username:str, user_email:str, user_password:st
     account_url_suffix = "api/v1/users"
 
     payload = {
-    'username': username,
+    'username': username.lower(),
     'email': user_email,
     'user_password': user_password,
     "friends" : friends,
@@ -246,7 +246,7 @@ def login(server_url:str, username:str, password:str)->None:
     """Function that logs the user in"""
 
     # Define the payload with the username and password
-    payload = {"username": username, "password": password}
+    payload = {"username": username.lower(), "password": password}
 
     # Make a POST request to the login endpoint with the payload
     login_response = requests.post(server_url, data=payload, headers=login_headers, timeout=10)
@@ -273,7 +273,7 @@ def login_with_token(server_url:str)->None:
     password = getpass.getpass(prompt = "Please enter your password: ")
     
     # Token is not valid or does not exist, log in with username and password
-    login(server_url, username, password)
+    login(server_url, username.lower(), password)
 
 def log_out():
     file_path = "token.json"  
