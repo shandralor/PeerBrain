@@ -186,12 +186,12 @@ def main():
                         print()
                         
                         base_64_encr_sym_key = str()
-                        friend_username = ''
+                        friend_username = str()
                         #error handling of faulty passwords
-                        while type(base_64_encr_sym_key) != str or friend_username == None:
+                        while friend_username == str():
                             user_password = getpass.getpass(prompt ="Please confirm your password to get your messages:  \n\n")
                             friend_username = input("Please enter the username of the friend that you want to see messages from: \n\n")
-                            if friend_username == '':
+                            if friend_username == str():
                                 print("You didn't provide a username for your friend!")
                             base_64_encr_sym_key = get_sym_key(server_url, user_password, friend_username)
                             

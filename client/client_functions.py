@@ -81,7 +81,7 @@ def get_account_info(server_url:str)->tuple:
 
     return (data['username'], data['email'])
 
-def get_sym_key(server_url:str, password:str, friend_username:str):
+def get_sym_key(server_url:str, password:str, friend_username:str)->any:
     """Function that uploads the encrypted symmetric key from the db"""
 
     account_url_suffix = "api/v1/user_key_request"
