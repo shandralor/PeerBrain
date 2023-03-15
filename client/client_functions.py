@@ -78,8 +78,11 @@ def get_account_info(server_url:str)->None:
     headers = {"Authorization": f"Bearer {get_token()}"}
     response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, timeout=10)
     data = response.json()
-
-    return data['username'], data['email']
+    try:
+        return data['username'], data['email']
+    except KeyError:
+        print(data["detail"])
+        print()
 
 def get_sym_key(server_url:str, password:str, friend_username:str):
     """Function that uploads the encrypted symmetric key from the db"""
@@ -251,6 +254,13 @@ def login(server_url:str, username:str, password:str)->None:
     # Make a POST request to the login endpoint with the payload
     login_response = requests.post(server_url, data=payload, headers=login_headers, timeout=10)
 
+        
+    #Will check if the detail key is present in the json response. If so this means the user is inactive
+    if "detail" in login_response.json():
+        print(login_response.json()["detail"])
+        return False
+        
+    
     # Extract the JWT token from the login response
     jwt_token = login_response.json()["access_token"]
 
@@ -273,7 +283,10 @@ def login_with_token(server_url:str)->None:
     password = getpass.getpass(prompt = "Please enter your password: ")
     
     # Token is not valid or does not exist, log in with username and password
-    login(server_url, username, password)
+    if login(server_url, username, password):
+        return True
+    else:
+        return False
 
 def log_out():
     file_path = "token.json"  

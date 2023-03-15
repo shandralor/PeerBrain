@@ -4,6 +4,7 @@ import os
 import json
 import requests
 import base64
+import argparse
 from typing import List, Union
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -17,12 +18,18 @@ from client_functions import create_token, get_token, get_account_info, get_sym_
     add_user_friends, get_user_friends, get_all_users, get_thoughts_for_user, wrap_encrypt_sym_key, upload_keystore, \
         login_with_token, log_out
 
+from fastapi import HTTPException
 
 def main():
     """Display the main menu and prompt the user to choose an option."""    
-    
-    #server_url = "http://127.0.0.1:8000/"
-    server_url = "https://peerbrain.teckhawk.be/"
+    # python cli_main.py -s dev FOR DEV SERVER OR python cli_main.py FOR NORMAL USE
+    argParser = argparse.ArgumentParser()
+    argParser.add_argument("-s", "--server", help="Dev or live server", type=str, default="live")
+    args = argParser.parse_args()
+    if args.server == "dev":
+        server_url = "http://127.0.0.1:8000/"
+    else:
+        server_url = "https://peerbrain.teckhawk.be/"  
     
     authenticated = False
 
@@ -44,11 +51,14 @@ def main():
             choice = input(">> ")
             
             if choice == "1":
+                
                 try:
-                    # username = input("Please enter your username: ")
-                    # password = getpass.getpass(prompt = "Please enter your password: ")
-                    login_with_token(server_url)
-                    authenticated = True
+                    if login_with_token(server_url):
+                        authenticated = True
+                    else:
+                        print("---")
+                        print("Inactive user!")
+                        print("---")
                 except KeyError:
                     print("---")
                     print("Username/Password incorrect")
@@ -204,6 +214,8 @@ def main():
                         print("---------------------------")
                         print(f"Trying to add {friend_username} as a friend. RESULT : {add_friend_result}")
                         print("---------------------------")
+                        #reloading friends object after adding a friend
+                        friends = get_user_friends(server_url)
                     elif sub_choice == "5":
                         print()
                         print("---Friends---")

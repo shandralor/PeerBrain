@@ -9,16 +9,19 @@ from uuid import UUID, uuid4
 import bcrypt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Path, Query, status
+from fastapi import Depends, FastAPI, HTTPException, Path, Query, status, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import HTMLResponse
 from jose import JWTError, jwt
+import html
 
 #---LOCAL IMPORTS---#
-from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB
+from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB, PasswordResetUser
 from db import add_friend, change_password, create_thought, create_user, \
     gen_pw_hash, get_encrypted_sym_key, get_friends_by_username, \
          get_thoughts, get_user_by_email, \
-            get_user_by_username, get_users, send_keys_to_remote_server
+            get_user_by_username, get_users, send_keys_to_remote_server, \
+                confirm_registration_token, create_password_reset_token, get_password_token
                 
 
 #---LOAD ENV VARS---#
@@ -30,6 +33,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes =["bcrypt"], deprecated="auto")
 oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+RESET_PASSWORD_ROUTE = os.environ.get("RESET_PASSWORD_ROUTE")
 
 #---APP INIT---#
 app = FastAPI()
@@ -88,7 +92,7 @@ def get_user(db: dict, username: str) -> Union[UserInDB, None]:
     - UserInDB: A `UserInDB` object containing the user's data if the user is found in the database.
       Returns `None` if the user is not found in the database.
     """
-    
+    db = get_users()
     if username in db:
         user_data = db[username]
         return UserInDB(**user_data)
@@ -109,7 +113,7 @@ def authenticate_user(db:dict, username:str, password:str)->Union[bool, dict]:
     Side Effects:
     - None.
     """
-    
+    db = get_users()
     user = get_user(db, username)
     if not user:
         return False
@@ -155,13 +159,15 @@ async def get_current_user(token : str = Depends(oauth_2_scheme)):
     Raises:
     - HTTPException: Raised if the token cannot be validated or the user cannot be found.
     """
+    db = get_users()
     
     credential_exception = HTTPException(
         status_code = status.HTTP_401_UNAUTHORIZED, 
         detail= "Could not validate credentials",
         headers={"WWW-Authenticate":"Bearer"}
         )
-        
+    
+  
     try:
         payload = jwt.decode(token, SECRET_KEY,algorithms=[ALGORITHM])
         username = payload.get("sub")
@@ -177,6 +183,7 @@ async def get_current_user(token : str = Depends(oauth_2_scheme)):
     if user is None:
         raise credential_exception
     
+      
     return user
 
 #---optional to check if user status is disabled---#
@@ -199,7 +206,6 @@ async def get_current_active_user(current_user: UserInDB = Depends(get_current_u
         raise HTTPException(status_code=400, detail = "Inactive user!")
     return current_user
 
-
 #---ENDPOINTS---#
 
 #Root route to get token
@@ -219,11 +225,18 @@ async def login_for_access_token(form_data : OAuth2PasswordRequestForm = Depends
     Side Effects:
     - Logs a message to a log file using the 'print_and_log()' function.
     """
-    
+    db = get_users()
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= "Username/password incorrect!",
                                          headers={"WWW-Authenticate":"Bearer"}) 
+        
+    if user.disabled:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= "Account inactive!",
+                                         headers={"WWW-Authenticate":"Bearer"})
+        
+    
+   
     access_token_expires = timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub" : user.username}, expires_delta=access_token_expires)
     print_and_log("logged in", user.username)
@@ -256,6 +269,117 @@ async def register_user(user : User):
     create_user(username, email, user_password)
     print_and_log("User account created", username)
     return {"Account creation" : "Successful"}
+
+@app.get("/confirm-email")
+async def confirm_email(token: str, username: str):
+    user = get_user_by_username(username)
+    user_key = user["key"]
+    user_confirm_token = user["confirmation_token"]
+    
+    if token == user_confirm_token:
+        confirm_registration_token(user_key)
+        return {"Success" : "Email verification succesful. Your account is now active!"}
+    else:
+        return {"Message" : "Email verification already completed!"}
+
+@app.post("/get_password_reset_token")
+async def get_password_reset_token(user : PasswordResetUser):    
+    username  = user.username
+    
+    user_object = get_user_by_username(username)
+    
+        
+    if user_object == {'Username': 'No user with username found'}:
+        raise HTTPException(status_code=400, detail="No user for that username!")
+    else:
+        if get_password_token(username):
+            """As the database operation called is a put, it will overwrite the previous token, 
+            thus making sure that only one password reset token can exist at any given time."""
+            
+            print("Reset token already found, deleting previous token!")
+        email = user_object["email"]
+        create_password_reset_token(username, email)
+ 
+@app.get(f"/{RESET_PASSWORD_ROUTE}/reset-password")  
+async def reset_user_password(username:str, token:str):
+    password_token_object = get_password_token(username)
+    
+    if password_token_object and password_token_object["reset_token"] == token:
+        print("Matching password reset token found!")
+        
+        html_content = f"""
+        <html>
+            <head>
+    
+            <meta charset="utf-8">
+            <title>PeerBrain</title>
+            <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+            <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
+            <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+
+            
+
+        </head>
+
+        <body>
+            
+            
+            <div class="auth-wrapper">
+                <div class="auth-content">
+                    <div class="auth-bg">
+                        <span class="r"></span>
+                        <span class="r s"></span>
+                        <span class="r s"></span>
+                        <span class="r"></span>
+                    </div>
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
+                            <div>
+                                <p class="mb-0 text-muted disabled"><a href="" disabled>Password Reset</a></p>
+                                    <form action="/{RESET_PASSWORD_ROUTE}/submit" method="post">
+                                        <input type= "hidden" id = "username" name = "username" value = "{username}">
+                                        <input type= "hidden" id = "token" name = "token" value = "{token}">
+                                        <label for="fname">New Password:</label><br>
+                                        <input type="password" id="new_password" name="new_password" minlength="8" required><br>
+                                        <label for="lname">Confirm Password:</label><br>
+                                        <input type="password" id="confirm_password" name="confirm_password" minlength="8" required><br><br>
+                                        <input type="submit" value="Submit">
+                                    </form> 
+                            </div>
+                            <br />
+                            <br />
+                            <p class="mb-0 text-muted"> <a href="https://github.com/shandralor/PeerBrain" >GitHub</a></p>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+                </html>
+        """.format(
+            new_password = html.escape(""),
+            confirm_password = html.escape(""),
+            token = html.escape(""),
+            username = html.escape("")
+        )
+        return HTMLResponse(content=html_content, status_code=200)     
+        
+    else:
+        raise HTTPException(status_code=400, detail="Invalid/expired password reset token!")
+    
+@app.post(f"/{RESET_PASSWORD_ROUTE}/submit")
+async def submit_form(new_password: str = Form(...), confirm_password: str = Form(...), token: str = Form(...), username:str = Form(...)):
+    if new_password != confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords did not match!")
+    else:
+        print(username)
+        print(new_password)
+        
+        return change_password(username, new_password)
+
 
 #---AUTH ENDPOINTS---#
 

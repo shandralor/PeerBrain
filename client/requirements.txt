@@ -1,4 +1,8 @@
 cryptography==3.4.8
-deta==1.1.0
+Kivy==2.1.0
+kivymd==1.1.1
+passlib==1.7.4
 python-dotenv==1.0.0
-requests==2.25.1
+requests==2.28.2
+
+
