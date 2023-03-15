@@ -1,6 +1,7 @@
 """Brainwaves cli client file"""
 import getpass
 import base64
+import json
 
 from encrypt_data import (
     generate_keypair,
@@ -185,30 +186,42 @@ def main():
                         get_user_friends(server_url)
                         print()
                         
-                        base_64_encr_sym_key = str()
+                        base_64_encr_sym_key = bytes(0)
                         friend_username = str()
                         #error handling of faulty passwords
-                        while friend_username == str():
-                            user_password = getpass.getpass(prompt ="Please confirm your password to get your messages:  \n\n")
-                            friend_username = input("Please enter the username of the friend that you want to see messages from: \n\n")
-                            if friend_username == str():
-                                print("You didn't provide a username for your friend!")
-                            base_64_encr_sym_key = get_sym_key(server_url, user_password, friend_username)
-                            
-                            
-                        encrypted_sym_key = base64.b64decode(base_64_encr_sym_key)
+                        try:
+                            while friend_username == str() and isinstance(base_64_encr_sym_key, bytes):
+                                user_password = getpass.getpass(prompt ="Please confirm your password to get your messages:  \n\n")
+                                friend_username = input("Please enter the username of the friend that you want to see messages from: \n\n")
+                                while friend_username == "":
+                                    print("You didn't provide a username for your friend!\n\n")
+                                    friend_username = str()
+                                    friend_username += input("Please enter the username of the friend that you want to see messages from: \n\n")
+                                
+                                base_64_encr_sym_key = get_sym_key(server_url, user_password, friend_username)
+                            try:
+                                encrypted_sym_key = base64.b64decode(base_64_encr_sym_key)
                                                 
-                        for thought in get_thoughts_for_user(server_url, friend_username):
-                            print("-------------------------------------------------------")
-                            print(f"TITLE:  {thought['title']}")
-                            print()
-                            print(f"RATING:  { thought['rating']}")
-                            print()
-                            decrypted_message = decrypt_message(thought["content"].encode("utf-8"), encrypted_sym_key)
-                            print(f"MESSAGE:  { decrypted_message}")
-                            print("-------------------------------------------------------")     
-                            print()
-                            
+                                for thought in get_thoughts_for_user(server_url, friend_username):
+                                    print("-------------------------------------------------------")
+                                    print(f"TITLE:  {thought['title']}")
+                                    print()
+                                    print(f"RATING:  { thought['rating']}")
+                                    print()
+                                    try:
+                                        decrypted_message = decrypt_message(thought["content"].encode("utf-8"), encrypted_sym_key)
+                                        print(f"MESSAGE:  { decrypted_message}")
+                                    except FileNotFoundError as err:
+                                        print("Error decrypting message, you may need to generate your keys still!\nError:", err)
+                                    except ValueError as err:
+                                        print("Please restart the programme to register your keys!\nError:", err)
+                                        break
+                            except TypeError as err:
+                                print("Error decrypting the symmetrical key, you may need to generate your keys still, or your password was incorrect!\nError:", err)
+                        except json.decoder.JSONDecodeError as err:
+                            print("Error decoding the symmetrical key, you may need to generate your keys still!\n Error:", err) 
+                        print("-------------------------------------------------------")     
+                        print()
                     elif sub_choice == "4":
                         friend_username = input("Enter your friend's username:")
                         add_friend_result = add_user_friends(server_url, friend_username)
