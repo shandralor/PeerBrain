@@ -16,7 +16,7 @@ from encrypt_data import generate_keypair, load_private_key, detect_private_key,
 
 from client_functions import create_token, get_token, get_account_info, get_sym_key, post_thought, register_user, \
     add_user_friends, get_user_friends, get_all_users, get_thoughts_for_user, wrap_encrypt_sym_key, upload_keystore, \
-        login_with_token, log_out, reset_password
+        login_with_token, log_out, reset_password, check_token
 
 from fastapi import HTTPException
 
@@ -54,7 +54,9 @@ def main():
             if choice == "1":
                 
                 try:
-                    if login_with_token(server_url):
+                    if check_token(server_url):
+                        authenticated = True
+                    elif login_with_token(server_url):
                         authenticated = True
                     else:
                         print("---")
