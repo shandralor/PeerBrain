@@ -7,10 +7,18 @@ This open-source project implements a peer-to-peer social network app where user
 If you want to contribute, you can fork this repository and issue pull requests! Feel free to use ChatGPT or OpenAI to help you with the coding.
 
 ### Table of Contents  
-1. [How does the open-source workflow work?](#how-does-the-open-source-workflow-work)
-2. [Encryption Mechanism](#encryption-mechanism)
-3. [Installation/Instructions](#installationinstructions)
-4. [Resources](#resources) 
+1. [Updates](#Updates)
+2. [How does the open-source workflow work?](#how-does-the-open-source-workflow-work)
+3. [Encryption Mechanism](#encryption-mechanism)
+4. [Installation/Instructions](#installationinstructions)
+5. [Resources](#resources) 
+
+### Updates
+
+**2023/03/15**
+* Code clean-up
+* User account creation now requires email verification before allowing you to login
+* Password reset functionality has been added
 
 
 ### How does the open-source workflow work?
@@ -35,11 +43,11 @@ pip install -r requirements.txt
 4. After successful installation, start the client service. Don't change anything in the code :)
 When everything runs fine as expected, you will see the menu as below:
 5. First step is to register yourself with the application.Select option 2 to register.
-![peerbrain1](https://user-images.githubusercontent.com/24318892/221877115-6374e40a-856e-48e0-af29-d57d7aab202c.png)
+![peerbrain1](https://user-images.githubusercontent.com/8386876/225581439-5ac89a92-eda2-4c85-bfb4-27ff6ab90482.png)
 6. After successful registration, try to login into the application with details you have used during registration process.
-![peerbrain2](https://user-images.githubusercontent.com/24318892/221877274-dc8420e6-36b2-4c20-be60-13669c9221bd.png)
+![peerbrain2](https://user-images.githubusercontent.com/8386876/225581428-5cc627c1-4625-4ac1-a3dc-64798d9befd8.png)
 7. After successful login, you will be able to see the Main menu as below:
-![peerbrain3](https://user-images.githubusercontent.com/24318892/221877324-690cecee-042e-4ea5-82a6-b7cbffdf622e.png)
+![peerbrain3](https://user-images.githubusercontent.com/8386876/225581434-1d116bf4-953e-4680-80b1-e291a3e9d8ba.png)
 8. Make sure you have generated the keys prior exploring the application. To generate keys Navigate to Account details section, select generate the keys(2nd option).
 
 Congratulations :tada: and Thanks for making it till here. Please free feel to explore the application menu :relaxed:. Happy journey!

@@ -5,6 +5,7 @@ from kivymd.uix.dialog import MDDialog
 from kivy.lang import Builder
 from kivy.properties import StringProperty
 from kivymd.uix.label import MDLabel
+from kivymd.uix.snackbar import Snackbar
 import os
 import requests
 
@@ -23,6 +24,7 @@ from client_functions import check_token, login, log_out
 class PeerbrainApp(MDApp):
     
     server_url = StringProperty('https://peerbrain.teckhawk.be/')
+    #server_url = StringProperty('http://127.0.0.1:8000/')
                
     def build(self):
         
@@ -187,16 +189,21 @@ class PeerbrainApp(MDApp):
         
     #--LOGIN SCREEN---#
     def log_in(self):
+        
         try:
             if login(self.server_url, self.username_field.text, self.password_field.text):
                 self.authenticated = True
                 print(self.authenticated)
+                snackbar = Snackbar(text="LOGGED IN SUCCESSFULLY!")
+                snackbar.open()
                 self.root.current='main_menu'
+            else:
+                snackbar = Snackbar(text="Username not active!")
+                snackbar.open()
         except KeyError:
-            print("---")
-            print("Username/Password incorrect")
-            print("---")
-    
+            snackbar = Snackbar(text="Username/Password incorrect")
+            snackbar.open()
+            
     #---LOG OUT FROM SERVER---#
     def log_out_from_main_menu(self):
         log_out()

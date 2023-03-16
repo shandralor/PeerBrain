@@ -7,11 +7,14 @@ import os
 import json
 import logging
 import requests
+import secrets
 from pprint import pprint #pylint: disable=unused-import
 from uuid import uuid4
 from deta import Deta
 from dotenv import load_dotenv
 from passlib.context import CryptContext
+
+from email_code import confirmation_mail, password_reset_mail
 
 load_dotenv()
 
@@ -22,6 +25,8 @@ deta = Deta(DETA_KEY)
 USERS = deta.Base("users")
 THOUGHTS = deta.Base("thoughts")
 KEYS = deta.Base("keys_db")
+TEST_USERS = deta.Base("test_users")
+PW_RESET = deta.Base("pw_reset")
 
 
 #---PW ENCRYPT INIT---#
@@ -41,6 +46,7 @@ def gen_pw_hash(pw:str)->str:
     return pwd_context.hash(pw)
 
 #---USER FUNCTIONS---#
+
 def get_users() -> dict:
     """Return a dictionary containing all users from the database.
 
@@ -112,24 +118,67 @@ def change_password(username, pw_to_hash):
     except Exception as error_message:
         logging.exception(error_message)
         return None       
-    
+
+def confirm_registration_token(user_key:str)->None:
+    """Function that will activate a user account. Checks for validity of the token are done on the endpoint."""
+    update = {"disabled" : False,
+              "confirmation_token" : "verified"
+                  }
+    try:
+        return USERS.update(update, user_key)
+    except Exception as error_message:
+        logging.exception(error_message)
+        return None    
+        
 def create_user(username:str, email:str, pw_to_hash:str)->None:
     """Function to create a new user. It takes three strings and inputs these into the new_user dictionary. The function then
     attempts to put this dictionary in the database"""
 
+    secret_token = secrets.token_hex(32)
+    
     new_user = {"username" : username,
                 "key" : str(uuid4()),
                 "hashed_pw" : gen_pw_hash(pw_to_hash), 
                 "email" : email,
                 "friends" : [],
-                "disabled" : False}
+                "disabled" : True,
+                "confirmation_token" : secret_token}
+
     try:
+        confirmation_mail(email, username, secret_token)
         return USERS.put(new_user)
     except Exception as error_message:
         logging.exception(error_message)
         return None
+
+def create_password_reset_token(username:str, email:str)->None:
     
-#---FRIENDS FUNCTIONS---#    
+    reset_token = secrets.token_hex(32)
+    
+    password_reset_object = {
+        "key" : username,
+        "reset_token" : reset_token
+    }
+    
+    try:
+        password_reset_mail(email, username, reset_token)
+        #Password token stays valid for 5 minutes, then it gets autowiped from the database.
+        return PW_RESET.put(password_reset_object, expire_in=300)
+    
+    except Exception as error_message:
+        logging.exception(error_message)
+        return None
+
+def get_password_token(username:str)->Union[dict, None]:
+    try:
+        return PW_RESET.get(username)
+        
+    except Exception as error_message:
+        logging.exception(error_message)
+        return None
+    
+#---FRIENDS FUNCTIONS---# 
+   
 def get_friends_by_username(username:str)->Union[dict, None]:
     """Function that will get a list of all usernames in the friends array of the user object. It will then collect all the friends
     user profile info for each friend, add it to a dictionary and then return that dictionary."""
@@ -171,6 +220,7 @@ def add_friend(username, friend_username):
     
 
 #---THOUGHTS FUNCTIONS---#
+
 def update_rating(rating:float)->float:
     """Helper function that takes the rating float from a Thoughts object and performs a logarithmic calculation on it. The result is 
     then returned."""

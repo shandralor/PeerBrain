@@ -121,4 +121,6 @@ class SymKeyRequest(BaseModel): # pylint: disable=too-few-public-
     """
     user_password : str
     friend_username : str
-    
+
+class PasswordResetUser(BaseModel):
+    username : str    

@@ -79,7 +79,11 @@ def get_account_info(server_url:str)->tuple:
     response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, timeout=10)
     data = response.json()
 
-    return (data['username'], data['email'])
+    try:
+        return data['username'], data['email']
+    except KeyError:
+        print(data["detail"])
+        print()
 
 def get_sym_key(server_url:str, password:str, friend_username:str)->str:
     """Function that uploads the encrypted symmetric key from the db"""
@@ -140,6 +144,21 @@ def add_user_friends(server_url:str, friend_username:str):
     data = response.json()
     
     return data
+
+def reset_password(server_url:str, username:str):
+    """Function to start the password reset process."""
+    account_url_suffix = "get_password_reset_token"
+
+    data = {
+        "username" : username
+    }
+    
+    response = requests.post(f"{server_url}{account_url_suffix}", json=data,  timeout=10)
+
+    if response.status_code ==200:
+        print("Response content:", response.content)    
+    else:
+        print("Something went wrong with the password reset request!")
 
 def get_user_friends(server_url:str)->tuple:
     """function to return a list of all user friends."""
@@ -250,6 +269,13 @@ def login(server_url:str, username:str, password:str)->None:
     # Make a POST request to the login endpoint with the payload
     login_response = requests.post(server_url, data=payload, headers=login_headers, timeout=10)
 
+        
+    #Will check if the detail key is present in the json response. If so this means the user is inactive
+    if "detail" in login_response.json():
+        print(login_response.json()["detail"])
+        return False
+        
+    
     # Extract the JWT token from the login response
     jwt_token = login_response.json()["access_token"]
 
@@ -274,6 +300,11 @@ def login_with_token(server_url:str)->None:
     # Token is not valid or does not exist, log in with username and password
     login(server_url, username.lower(), password)
 
+    if login(server_url, username, password):
+        return True
+    else:
+        return False
+
 def log_out():
     file_path = "token.json"  
     if os.path.exists(file_path):
@@ -281,3 +312,5 @@ def log_out():
         print("Logged out successfully!")
     else:
         print("You are not logged in!")   
+        
+
