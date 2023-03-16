@@ -292,8 +292,8 @@ def login_with_token(server_url:str)->None:
     """Function that tries to log in with a token first. If the token is not valid or
     does not exist, it logs in with the provided username and password"""
 
-    if check_token(server_url):
-        return
+    # if check_token(server_url):
+    #     return True
     username = input("Please enter your username: ")
     password = getpass.getpass(prompt = "Please enter your password: ")
     
