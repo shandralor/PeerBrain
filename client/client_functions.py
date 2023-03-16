@@ -144,6 +144,21 @@ def add_user_friends(server_url:str, friend_username:str):
     
     return data
 
+def reset_password(server_url:str, username:str):
+    """Function to start the password reset process."""
+    account_url_suffix = "get_password_reset_token"
+
+    data = {
+        "username" : username
+    }
+    
+    response = requests.post(f"{server_url}{account_url_suffix}", json=data,  timeout=10)
+
+    if response.status_code ==200:
+        print("Response content:", response.content)    
+    else:
+        print("Something went wrong with the password reset request!")
+
 def get_user_friends(server_url:str)->None:
     """function to return a list of all user friends."""
     account_url_suffix = "api/v1/friends"
@@ -295,3 +310,5 @@ def log_out():
         print("Logged out successfully!")
     else:
         print("You are not logged in!")   
+        
+

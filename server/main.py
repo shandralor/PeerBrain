@@ -272,6 +272,7 @@ async def register_user(user : User):
 
 @app.get("/confirm-email")
 async def confirm_email(token: str, username: str):
+    """User endpoint that wil handle user verification after the account gets created. If will verify the confirmation token."""
     user = get_user_by_username(username)
     user_key = user["key"]
     user_confirm_token = user["confirmation_token"]
@@ -299,9 +300,13 @@ async def get_password_reset_token(user : PasswordResetUser):
             print("Reset token already found, deleting previous token!")
         email = user_object["email"]
         create_password_reset_token(username, email)
- 
+        #Added return to notify user that the email got sent out!
+        return {"Password Reset Email Sent Successfully!" : f"Email sent to {email}"}
+    
 @app.get(f"/{RESET_PASSWORD_ROUTE}/reset-password")  
 async def reset_user_password(username:str, token:str):
+    """Returns endpoint that will render an html form where you can enter your new password and confirm password. This data will get
+    html sanitized and then send to the post endpoint to trigger the function or not."""
     password_token_object = get_password_token(username)
     
     if password_token_object and password_token_object["reset_token"] == token:
@@ -372,12 +377,10 @@ async def reset_user_password(username:str, token:str):
     
 @app.post(f"/{RESET_PASSWORD_ROUTE}/submit")
 async def submit_form(new_password: str = Form(...), confirm_password: str = Form(...), token: str = Form(...), username:str = Form(...)):
+    """Post function that will trigger the reset password function if the new password and confirm password match"""
     if new_password != confirm_password:
         raise HTTPException(status_code=400, detail="Passwords did not match!")
-    else:
-        print(username)
-        print(new_password)
-        
+    else:               
         return change_password(username, new_password)
 
 

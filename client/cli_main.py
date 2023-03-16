@@ -16,7 +16,7 @@ from encrypt_data import generate_keypair, load_private_key, detect_private_key,
 
 from client_functions import create_token, get_token, get_account_info, get_sym_key, post_thought, register_user, \
     add_user_friends, get_user_friends, get_all_users, get_thoughts_for_user, wrap_encrypt_sym_key, upload_keystore, \
-        login_with_token, log_out
+        login_with_token, log_out, reset_password
 
 from fastapi import HTTPException
 
@@ -44,9 +44,10 @@ def main():
     #MENU SHOWING WHILE WE ARE NOT LOGGED IN OR AUTHENTICATED WITH TOKEN
     if not authenticated:
         while authenticated == False:
-            print("1. Log in to the current server.")
+            print("1. Log in to the current server")
             print("2. Register account on the current server")
-            print("3. Change server.")
+            print("3. Change server")
+            print("4. Reset your password")
             print("Q to exit")
             choice = input(">> ")
             
@@ -79,6 +80,12 @@ def main():
                 print()    
             elif choice == "3":
                 server_url = input("Please enter a new url: ")
+            elif choice == "4":
+                print()
+                password_reset_username = input("Please enter your username: ")
+                print()
+                reset_password(server_url, password_reset_username)
+                print()
             elif choice == "Q" or choice=="q":
                 break
             else:

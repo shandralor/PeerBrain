@@ -7,10 +7,18 @@ This open-source project implements a peer-to-peer social network app where user
 If you want to contribute, you can fork this repository and issue pull requests! Feel free to use ChatGPT or OpenAI to help you with the coding.
 
 ### Table of Contents  
-1. [How does the open-source workflow work?](#how-does-the-open-source-workflow-work)
-2. [Encryption Mechanism](#encryption-mechanism)
-3. [Installation/Instructions](#installationinstructions)
-4. [Resources](#resources) 
+1. [Updates](#Updates)
+2. [How does the open-source workflow work?](#how-does-the-open-source-workflow-work)
+3. [Encryption Mechanism](#encryption-mechanism)
+4. [Installation/Instructions](#installationinstructions)
+5. [Resources](#resources) 
+
+### Updates
+
+**2023/03/15**
+* Code clean-up
+* User account creation now requires email verification before allowing you to login
+* Password reset functionality has been added
 
 
 ### How does the open-source workflow work?
