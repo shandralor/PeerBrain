@@ -119,6 +119,14 @@ def main():
                     
                     sub_choice = input(">> ")
                     
+                    # if sub_choice == "1":
+                    #     all_users = get_all_users(server_url)
+                    #     print()
+                    #     print("---ALL USERS---")
+                    #     print()
+                    #     for user in all_users:
+                    #         print(user)
+                    #         print()
                     if sub_choice == "1":
                         if detect_private_key() and detect_sym_key() and detect_public_key():
                             print()
