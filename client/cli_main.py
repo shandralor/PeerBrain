@@ -114,22 +114,20 @@ def main():
                     print()
                     print("\nPlease choose an option:")
                     print()
-                    print("1. Get all users.")
-                    print("2. Generate SSH Keypair and symmetrical key(needed to create and read messages/tweets)")
-                    # print("3. Check public key)")
+                    print("1. Generate SSH Keypair and symmetrical key(needed to create and read messages/tweets)")
                     print("B to return to main menu")
                     
                     sub_choice = input(">> ")
                     
+                    # if sub_choice == "1":
+                    #     all_users = get_all_users(server_url)
+                    #     print()
+                    #     print("---ALL USERS---")
+                    #     print()
+                    #     for user in all_users:
+                    #         print(user)
+                    #         print()
                     if sub_choice == "1":
-                        all_users = get_all_users(server_url)
-                        print()
-                        print("---ALL USERS---")
-                        print()
-                        for user in all_users:
-                            print(user)
-                            print()
-                    elif sub_choice == "2":
                         if detect_private_key() and detect_sym_key() and detect_public_key():
                             print()
                             print("Keys already exist, overwriting them will make your account irretrievable!!")
