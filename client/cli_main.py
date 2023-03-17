@@ -16,7 +16,7 @@ from encrypt_data import generate_keypair, load_private_key, detect_private_key,
 
 from client_functions import create_token, get_token, get_account_info, get_sym_key, post_thought, register_user, \
     add_user_friends, get_user_friends, get_all_users, get_thoughts_for_user, wrap_encrypt_sym_key, upload_keystore, \
-        login_with_token, log_out, reset_password, check_token
+        login_with_token, log_out, reset_password, check_token, remove_user_friends
 
 from fastapi import HTTPException
 
@@ -163,6 +163,7 @@ def main():
                     print("--------------------------------")
                     print("4. Add a friend")
                     print("5. Check friends list")
+                    print("6. Remove a friend from your friend list")
                     print("--------------------------------")
                     print("B to return to main menu")
                     
@@ -230,6 +231,18 @@ def main():
                         for friend in friends:
                             print(f"- {friend}")
                             print()
+                    elif sub_choice == "6":
+                        print()
+                        print("---Friends---")
+                        print()
+                        for friend in friends:
+                            print(f"- {friend}")
+                            print()
+                        friend_username = input("Enter the username of the friend you want to remove:")
+                        print()
+                        remove_user_friends(server_url, friend_username)
+                        #reloading friends object after removing a friend
+                        friends = get_user_friends(server_url)
                     elif sub_choice == "B" or sub_choice=="b":
                         print("Returning to main menu...")
                         break        

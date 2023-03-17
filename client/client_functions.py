@@ -175,6 +175,26 @@ def get_user_friends(server_url:str)->None:
         
     return tuple(usernames)
 
+def remove_user_friends(server_url:str, friend_username:str)->None:
+    """function to return a list of all user friends."""
+    account_url_suffix = "api/v1/remove-friend"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+
+    params = {"friend_username" : friend_username}
+    
+    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params = params, timeout=10)
+
+    data = response.json()
+
+    if response.status_code == 200:
+        # Print the response content
+        print(f"Succes : You successfully removed {friend_username} from your friends list!")
+    else:
+        # Print an error message
+        print(data)
+        print(f"Error: {response.status_code}" )
+        
 def get_all_users(server_url:str)->tuple:
     """Development function to get all users in the database. Will be deprecated on app release."""
     account_url_suffix = "api/v1/users"

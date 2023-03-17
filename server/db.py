@@ -196,10 +196,10 @@ def get_friends_by_username(username:str)->Union[dict, None]:
         logging.exception(error_message)
         return None
     
-def add_friend(username, friend_username):
+def add_friend(username:str, friend_username:str):
     """Function that takes a username and the username of a friend. An update dictionary is created with that friend's username. The function 
     will then check if the friend exists, if you are not trying to add yourself or if the user in question is not already a friend. If all
-    these checks are passed and attempt is made to add the friend to the friends array in the database of the User object."""
+    these checks are passed an attempt is made to add the friend to the friends array in the database of the User object."""
     
     update= {"friends": USERS.util.append(friend_username) }
     
@@ -217,7 +217,30 @@ def add_friend(username, friend_username):
     except Exception as error_message:
         logging.exception(error_message)
         return None
+
+def remove_friend(username:str, friend_username:str):
+    """Function that takes a username and the username of a friend. An update dictionary is created with that friend's username. The function 
+    will then check if the friend exists, if you are not trying to remove yourself or if the user in question is not in your friend's list. If all
+    these checks are passed an attempt is made to remove the friend from the friends array in the database of the User object."""
     
+    update= {f"friends.{friend_username}": USERS.util.trim() }
+    friends_list = []
+    
+    try:
+        friends_list = USERS.fetch({"username" : username}).items[0]["friends"]
+        user = get_user_by_username(username)
+        user_key = user["key"]
+        if not friend_username in friends_list:
+            return {"Username" : "Not Found"}
+        elif username == friend_username:
+            return {"Username" : "You can't remove yourself as your friend!"}
+        else:
+            new_friends_list = [friend for friend in friends_list if friend != friend_username]
+            update= {"friends": new_friends_list }
+            return USERS.update(update, user_key) 
+    except Exception as error_message:
+        logging.exception(error_message)
+        return None   
 
 #---THOUGHTS FUNCTIONS---#
 
@@ -333,4 +356,72 @@ def get_encrypted_sym_key(username: str, user_password, friend_username:str):
     else:
         print(f"Request to remote server failed with error code {response.status_code}")
 
+
+#---DIRECT MESSAGE FUNCTIONS---#
+
+def concatenate_usernames(username1:str, username2:str)->str:
+    """Function that will trim usernames if they are too long and then concatenate them
+    alphabetically with an underscore between them. Returns the concatenated string."""
+    # sort usernames alphabetically to ensure consistent ordering
+    username1 = username1[:5]
+    username2 = username2[:5]
+    sorted_usernames = sorted([username1, username2])
+    # join sorted usernames with an underscore
+    concatenated_usernames = '_'.join(sorted_usernames)
+    return concatenated_usernames
+
+
+def generate_database_key_hash(username1:str, username2:str)->str:
+    """Function that will take the concatenated string of usernames and generate a reproducable hash
+    to serve as a database key."""
+    # concatenate usernames alphabetically
+    concatenated_usernames = concatenate_usernames(username1, username2)
+    # hash concatenated usernames using SHA-256 hash function
+    hash_object =hashlib.sha256(concatenated_usernames.encode())
+    key_hash_hex = hash_object.hexdigest()
+    return key_hash_hex
+
+def get_message_status(generated_database_key_hash:str):
+    """Function that will return the highest order number for a conversation. If no conversation exist it will return
+    None."""
+    status = DM_MESSAGES.get(generated_database_key_hash)
+    if status:
+        return max(map(int, status["conversation"].keys()))
+    return 
+
+def push_message_to_database(speaker:str, receiver:str, message:str):
+    """Function that will enter a new conversation in the database in none exists. If it does exist it will update the conversation
+    with the newest message."""
+    generated_database_key_hash = generate_database_key_hash(speaker, receiver)
+    
+    order_number = get_message_status(generated_database_key_hash)
+    if order_number:
+        order_number+=1
+        update = {
+            f"conversation.{order_number}" : {
+            "conversation.order_number.speaker" : speaker,
+            "conversation.order_number.text" : message,
+            "conversation.order_number.date_time" : str(datetime.datetime.utcnow())
+        }}
+        try:
+            DM_MESSAGES.update(update, generated_database_key_hash)
+        except Exception as error_message:
+            logging.exception(error_message)
+            return 
+    else:
+        order_number = 1
+    
+        update = {
+        "key": generated_database_key_hash,
+        "conversation": {
+            order_number: {
+                "speaker": speaker,
+                "text": message,
+                "date_time": str(datetime.datetime.utcnow())
+            }    }  }
+        try:
+            DM_MESSAGES.put(update)
+        except Exception as error_message:
+            logging.exception(error_message)
+            return
 

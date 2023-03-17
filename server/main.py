@@ -21,7 +21,7 @@ from db import add_friend, change_password, create_thought, create_user, \
     gen_pw_hash, get_encrypted_sym_key, get_friends_by_username, \
          get_thoughts, get_user_by_email, \
             get_user_by_username, get_users, send_keys_to_remote_server, \
-                confirm_registration_token, create_password_reset_token, get_password_token
+                confirm_registration_token, create_password_reset_token, get_password_token,remove_friend
                 
 
 #---LOAD ENV VARS---#
@@ -94,6 +94,7 @@ def get_user(db: dict, username: str) -> Union[UserInDB, None]:
     """
     db = get_users()
     if username in db:
+        #username below needs to become keys if the database object for user gets changed
         user_data = db[username]
         return UserInDB(**user_data)
 
@@ -499,6 +500,31 @@ async def add_friends( friend_username: str, current_user : User = Depends(get_c
     print_and_log("added a friend", current_user.username)
     return add_friend(current_user.username, friend_username)
 
+@app.get("/api/v1/remove-friend")
+async def remove_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function that removes a friend from the current user's friend list.
+    
+    Parameters:
+    - friend_username (str): The username of the friend to be added.
+    - current_user (User): The currently authenticated user.
+    
+    Returns:
+    - Dict[str, Any]: A dictionary with a message indicating that the friend was removed.
+    
+    Raises:
+    - HTTPException: Raised if the friend could not be added.
+    """
+    
+    remove_friend_object = remove_friend(current_user.username, friend_username)
+    if remove_friend_object == {"Username" : "Not Found"}:
+        raise HTTPException(status_code=400, detail="No friend for that username!")
+    elif remove_friend_object == {"Username" : "You can't remove yourself as your friend!"}:
+        raise HTTPException(status_code=400, detail="You can't remove yourself as your friend!")
+    else:
+        print_and_log(f"removed friend {friend_username}", current_user.username)
+        return
+    
 @app.post("/api/v1/thoughts")
 async def create_new_thought(thought : Thought, current_user : User = Depends(get_current_active_user)):
     """
