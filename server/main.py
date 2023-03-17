@@ -281,9 +281,118 @@ async def confirm_email(token: str, username: str):
     
     if token == user_confirm_token:
         confirm_registration_token(user_key)
-        return {"Success" : "Email verification succesful. Your account is now active!"}
+        html_content = f"""<!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                
+                <meta charset="utf-8">
+                <title>PeerBrain</title>
+                <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+                <link rel="stylesheet" href="https://andrewstech.github.io/public/peer-brain/style.css">
+
+                
+
+            </head>
+
+            <body>
+                
+                
+                <div class="auth-wrapper">
+                    <div class="auth-content">
+                        <div class="auth-bg">
+                            <span class="r"></span>
+                            <span class="r s"></span>
+                            <span class="r s"></span>
+                            <span class="r"></span>
+                        </div>
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
+                                <div>
+                                    <hr>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>Email verification succesful!</a></p>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>Your account is now active!</a></p>
+                                    <hr>
+                                </div>
+
+                                <br />
+                                <br />
+
+                                
+
+                                <a class="fa fa-github" style="font-size:24px" href="https://github.com/shandralor/PeerBrain"></a>
+                                <br />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 </body>
+            </html>"""
+        return HTMLResponse(content=html_content, status_code=200)     
+        
     else:
-        return {"Message" : "Email verification already completed!"}
+        html_content = f"""<!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                
+                <meta charset="utf-8">
+                <title>PeerBrain</title>
+                <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+                <link rel="stylesheet" href="https://andrewstech.github.io/public/peer-brain/style.css">
+
+                
+
+            </head>
+
+            <body>
+                
+                
+                <div class="auth-wrapper">
+                    <div class="auth-content">
+                        <div class="auth-bg">
+                            <span class="r"></span>
+                            <span class="r s"></span>
+                            <span class="r s"></span>
+                            <span class="r"></span>
+                        </div>
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
+                                <div>
+                                    <hr>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>Email verification was already completed!</a></p>
+                                    <hr>
+                                </div>
+
+                                <br />
+                                <br />
+
+                                
+
+                                <a class="fa fa-github" style="font-size:24px" href="https://github.com/shandralor/PeerBrain"></a>
+                                <br />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </body>
+            </html>"""
+        return HTMLResponse(content=html_content, status_code=200) 
+        
 
 @app.post("/get_password_reset_token")
 async def get_password_reset_token(user : PasswordResetUser):    
