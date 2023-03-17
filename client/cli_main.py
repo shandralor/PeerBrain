@@ -2,6 +2,7 @@
 import getpass
 import base64
 import json
+import argparse
 
 from encrypt_data import (
     generate_keypair,
@@ -32,7 +33,8 @@ from client_functions import (
     log_out,
     reset_password,
     check_token, 
-    remove_user_friends
+    remove_user_friends,
+    update_rating_for_thought
 )
 
 from fastapi import HTTPException
@@ -168,6 +170,8 @@ def main():
                     else:
                         print("Invalid choice")        
             elif choice == "2":
+                #temp storage of the password
+                user_password=""
                 while True:
                     print("\nACCOUNT MENU:")
                     print()
@@ -182,6 +186,7 @@ def main():
                     print("5. Check friends list")
                     print("6. Remove a friend from your friend list")
                     print("--------------------------------")
+                    print("7. New thought display function test")
                     print("B to return to main menu")
                     
                     sub_choice = input(">> ")
@@ -272,6 +277,60 @@ def main():
                         remove_user_friends(server_url, friend_username)
                         #reloading friends object after removing a friend
                         friends = get_user_friends(server_url)
+                    elif sub_choice == "7":
+                        get_user_friends(server_url)
+                        print()
+                        
+                        base_64_encr_sym_key = bytes(0)
+                        friend_username = str()
+                        
+                        #error handling of faulty passwords
+                        
+                        while friend_username == str() and isinstance(base_64_encr_sym_key, bytes):
+                            if user_password == "":
+                                user_password = getpass.getpass(prompt ="Please confirm your password to get your messages:  \n\n")
+                            friend_username = input("Please enter the username of the friend that you want to see messages from: \n\n")
+                            while friend_username == "":
+                                print("You didn't provide a username for your friend!\n\n")
+                                friend_username = str()
+                                friend_username += input("Please enter the username of the friend that you want to see messages from: \n\n")
+                            
+                            base_64_encr_sym_key = get_sym_key(server_url, user_password, friend_username)
+                            
+                            encrypted_sym_key = base64.b64decode(base_64_encr_sym_key)
+                            thoughts = get_thoughts_for_user(server_url, friend_username)
+                            reading = True
+                            if len(thoughts) == 0:
+                                print("No thoughts found for this user.")
+                            else:
+                                while reading:
+                                    print("Please choose a thought to read by entering its number or type B to go back:\n")
+                                    for i, thought in enumerate(thoughts):
+                                        print(f"{i+1}. TITLE: {thought['title']}\t RATING: {thought['rating']}")
+                                    
+                                    try:
+                                        thought_choice = input("\nEnter thought number: ")
+                                        if thought_choice == "b" or thought_choice == "B":
+                                            reading = False
+                                            break
+                                        else: 
+                                            thought_num = int(thought_choice)
+                                            selected_thought = thoughts[thought_num-1]
+                                            print(f"\nTITLE:  {selected_thought['title']}")
+                                            print(f"RATING: {selected_thought['rating']}\n")
+                                            try:
+                                                decrypted_message = decrypt_message(selected_thought["content"].encode("utf-8"), encrypted_sym_key)
+                                                print(f"MESSAGE:  { decrypted_message}\n\n")
+                                                update_rating_for_thought(server_url, str(selected_thought["key"]))
+                                            except FileNotFoundError as err:
+                                                print("Error decrypting message, you may need to generate your keys still!\nError:", err)
+                                            except ValueError as err:
+                                                print("Please restart the programme to register your keys!\nError:", err)
+                                    except ValueError as err:
+                                        print("Invalid input. Please enter a valid thought number or B to go back!!\nError:", err)
+                                    except IndexError as err:
+                                        print("You selected a non-existant thought number.\nError:", err)
+
                     elif sub_choice == "B" or sub_choice=="b":
                         print("Returning to main menu...")
                         break        

@@ -21,7 +21,8 @@ from db import add_friend, change_password, create_thought, create_user, \
     gen_pw_hash, get_encrypted_sym_key, get_friends_by_username, \
          get_thoughts, get_user_by_email, \
             get_user_by_username, get_users, send_keys_to_remote_server, \
-                confirm_registration_token, create_password_reset_token, get_password_token,remove_friend
+                confirm_registration_token, create_password_reset_token, get_password_token,remove_friend, \
+                    update_thought_rating
                 
 
 #---LOAD ENV VARS---#
@@ -462,6 +463,25 @@ async def get_thought(query_str : str, current_user : User = Depends(get_current
     - HTTPException: Raised if the user is not authenticated.
     """
     return get_thought(query_str)
+
+@app.get("/api/v1/update-thought-rating")
+async def update_thoughts_rating(key : str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
+    or a list of thoughts that match partially with the query string.
+    
+    Parameters:
+    - query_str (str): The query string to use to retrieve thoughts.
+    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
+    retrieve the user. Defaults to None.
+    
+    Returns:
+    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    return update_thought_rating(key)
 
 @app.get("/api/v1/friends")
 async def get_friends( current_user : User = Depends(get_current_active_user)):

@@ -244,12 +244,29 @@ def remove_friend(username:str, friend_username:str):
 
 #---THOUGHTS FUNCTIONS---#
 
-def update_rating(rating:float)->float:
+def calculate_rating_increase(rating:float)->float:
     """Helper function that takes the rating float from a Thoughts object and performs a logarithmic calculation on it. The result is 
     then returned."""
+    increase = 1
+    base = 2
+    if rating <=1:
+        rating=1.1
     
-    rating += math.log(rating+1)
-    return rating
+    return rating + increase * math.log(rating, base)
+    
+def update_thought_rating(key:str)->Union[dict, str, None]:
+    """Function to increase a thoughts rating using the increase function we defined earlier."""
+    thought = THOUGHTS.get(key)
+    rating = thought["rating"]
+    new_rating = calculate_rating_increase(rating)
+    
+    update = {"rating" : new_rating}
+    try:
+        THOUGHTS.update(update, key)
+        print(new_rating)
+    except Exception as error_message:
+        logging.exception(error_message)
+        return None
 
 def get_thought(query_str:str)->Union[dict, str, None]:
     """Function to find a Thought by title. Might need refinement when implementing the encryption aspect."""
@@ -264,6 +281,7 @@ def get_thought(query_str:str)->Union[dict, str, None]:
         logging.exception(error_message)
         return None
 
+
 def get_thoughts(username:str)->Union[dict, None]:
     """Function to find all thoughts that have the given username in its list. It will return a dictionary of 
     all the Thought objects that have the usernames username provided."""
@@ -272,7 +290,7 @@ def get_thoughts(username:str)->Union[dict, None]:
         results = THOUGHTS.fetch().items
         for thought in results:
             if username == thought["username"]:
-                result_list_thoughts.append({"title":thought["title"], "content" : thought["content"], "rating" : thought["rating"]})
+                result_list_thoughts.append({"title":thought["title"], "content" : thought["content"], "rating" : thought["rating"], "key" : thought["key"]})
                     
         return json.dumps(result_list_thoughts)
         
@@ -425,3 +443,4 @@ def push_message_to_database(speaker:str, receiver:str, message:str):
             logging.exception(error_message)
             return
 
+update_thought_rating("222a8c6f-13a0-4f4c-8ae9-8f1e2dae6b8a")

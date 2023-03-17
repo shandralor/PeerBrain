@@ -176,6 +176,23 @@ def get_user_friends(server_url:str)->tuple:
         
     return tuple(usernames)
 
+def update_rating_for_thought(server_url:str, key:str)->None:
+    """function to update a thoughts rating when it is read"""
+    account_url_suffix = "api/v1/update-thought-rating"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+
+    params = {"key" : key}
+    
+    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params = params, timeout=10)
+
+    data = response.json()
+
+    if not response.status_code == 200:
+        # Print an error message
+        print(data)
+        print(f"Error: {response.status_code}" )
+
 def remove_user_friends(server_url:str, friend_username:str)->None:
     """function to return a list of all user friends."""
     account_url_suffix = "api/v1/remove-friend"
