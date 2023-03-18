@@ -16,13 +16,14 @@ from jose import JWTError, jwt
 import html
 
 #---LOCAL IMPORTS---#
-from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB, PasswordResetUser
+from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB, PasswordResetUser, \
+    MessageObject
 from db import add_friend, change_password, create_thought, create_user, \
     gen_pw_hash, get_encrypted_sym_key, get_friends_by_username, \
          get_thoughts, get_user_by_email, \
             get_user_by_username, get_users, send_keys_to_remote_server, \
                 confirm_registration_token, create_password_reset_token, get_password_token,remove_friend, \
-                    update_thought_rating
+                    update_thought_rating, get_conversation, push_message_to_database
                 
 
 #---LOAD ENV VARS---#
@@ -692,6 +693,30 @@ async def read_users_me(current_user : User = Depends(get_current_active_user)):
     
     print_and_log("consulted his user details", current_user.username)
     return current_user
+
+@app.get("/api/v1/dm-conversation")
+async def get_users_conversation(friend_username:str,current_user : User = Depends(get_current_active_user)):
+    """
+    """
+    
+    #print_and_log("requested private conversation data", current_user.username)
+    conversation_data =  get_conversation(current_user.username,friend_username)
+    
+    return conversation_data
+
+@app.post("/api/v1/dm-conversation")
+async def post_conversation(message_object : MessageObject,  current_user : User = Depends(get_current_active_user)):
+    """
+    """
+    
+    friend_username = message_object.friend_username
+    message = message_object.message
+    username = current_user.username
+        
+    if push_message_to_database(username, friend_username, message):
+        print_and_log("Createad a DM", current_user.username)
+        return {"Message" : "Uploaded successfully"}
+    return
 
 @app.post("/api/v1/post_key_store")
 async def post_keystore_user(keystore : KeyStore,  current_user : User = Depends(get_current_active_user)):

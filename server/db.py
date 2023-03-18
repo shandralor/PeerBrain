@@ -13,7 +13,8 @@ from uuid import uuid4
 from deta import Deta
 from dotenv import load_dotenv
 from passlib.context import CryptContext
-
+import hashlib
+import datetime
 from email_code import confirmation_mail, password_reset_mail
 
 load_dotenv()
@@ -27,7 +28,7 @@ THOUGHTS = deta.Base("thoughts")
 KEYS = deta.Base("keys_db")
 TEST_USERS = deta.Base("test_users")
 PW_RESET = deta.Base("pw_reset")
-
+DM_MESSAGES = deta.Base("dm_messages")
 
 #---PW ENCRYPT INIT---#
 pwd_context = CryptContext(schemes =["bcrypt"], deprecated="auto")
@@ -377,6 +378,7 @@ def get_encrypted_sym_key(username: str, user_password, friend_username:str):
 
 #---DIRECT MESSAGE FUNCTIONS---#
 
+#prepare the usernames of the conversation participants for hash generation
 def concatenate_usernames(username1:str, username2:str)->str:
     """Function that will trim usernames if they are too long and then concatenate them
     alphabetically with an underscore between them. Returns the concatenated string."""
@@ -388,7 +390,8 @@ def concatenate_usernames(username1:str, username2:str)->str:
     concatenated_usernames = '_'.join(sorted_usernames)
     return concatenated_usernames
 
-
+#generate a hash key to identify the current conversation. This key will always be the same as long as the
+#usernames are provided to the function
 def generate_database_key_hash(username1:str, username2:str)->str:
     """Function that will take the concatenated string of usernames and generate a reproducable hash
     to serve as a database key."""
@@ -417,9 +420,9 @@ def push_message_to_database(speaker:str, receiver:str, message:str):
         order_number+=1
         update = {
             f"conversation.{order_number}" : {
-            "conversation.order_number.speaker" : speaker,
-            "conversation.order_number.text" : message,
-            "conversation.order_number.date_time" : str(datetime.datetime.utcnow())
+            f"speaker" : speaker,
+            f"text" : message,
+            f"date_time" : str(datetime.datetime.utcnow())
         }}
         try:
             DM_MESSAGES.update(update, generated_database_key_hash)
@@ -443,4 +446,18 @@ def push_message_to_database(speaker:str, receiver:str, message:str):
             logging.exception(error_message)
             return
 
-update_thought_rating("222a8c6f-13a0-4f4c-8ae9-8f1e2dae6b8a")
+def get_conversation(speaker:str, receiver:str):
+    conversation_key = generate_database_key_hash(speaker, receiver)
+    conversation_object = DM_MESSAGES.get(conversation_key)
+    
+    if conversation_object:    
+        conversation = conversation_object["conversation"]
+        conversation_json_list = []
+    
+        for key in sorted(conversation.keys()):
+            speaker = conversation[key]["speaker"]
+            text = conversation[key]['text']
+            conversation_json_list.append({"speaker" : speaker, "text" : text})
+            
+        return json.dumps(conversation_json_list)
+    return {"Error" : "No conversation found for those users!"}

@@ -160,6 +160,24 @@ def reset_password(server_url:str, username:str):
     else:
         print("Something went wrong with the password reset request!")
 
+def post_conversation_message(server_url:str, friend_username:str, message:str):
+    """Function to start the password reset process."""
+    account_url_suffix = "api/v1/dm-conversation"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+    
+    data = {
+        "friend_username" : friend_username,
+        "message" : message
+    }
+    
+    response = requests.post(f"{server_url}{account_url_suffix}", json=data,  headers=headers, timeout=10)
+
+    if response.status_code ==200:
+        print("Message set succesfully!")    
+    else:
+        print("Something went wrong with sending your message!")
+
 def get_user_friends(server_url:str)->tuple:
     """function to return a list of all user friends."""
     account_url_suffix = "api/v1/friends"
@@ -188,6 +206,31 @@ def update_rating_for_thought(server_url:str, key:str)->None:
 
     data = response.json()
 
+    if not response.status_code == 200:
+        # Print an error message
+        print(data)
+        print(f"Error: {response.status_code}" )
+
+def get_user_conversation(server_url:str, friend_username:str)->List:
+    """function to get a conversation if it exists"""
+    account_url_suffix = "api/v1/dm-conversation"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+
+    params = {"friend_username" : friend_username}
+    
+    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params=params, timeout=10)
+
+    data = response.json()
+    print("\n\n")
+    print('--------')
+    if type(data) == dict:
+        print(data)
+    else:
+        #prints the conversation
+        for message in json.loads(data):
+            print(f"{message['speaker']} :{ message['text']}\n")
+    print('--------')
     if not response.status_code == 200:
         # Print an error message
         print(data)

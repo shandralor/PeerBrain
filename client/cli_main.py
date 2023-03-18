@@ -35,7 +35,9 @@ from client_functions import (
     reset_password,
     check_token, 
     remove_user_friends,
-    update_rating_for_thought
+    update_rating_for_thought,
+    get_user_conversation,
+    post_conversation_message
 )
 
 from fastapi import HTTPException
@@ -188,6 +190,7 @@ def main():
                     print("6. Remove a friend from your friend list")
                     print("--------------------------------")
                     print("7. New thought display function test")
+                    print("8. Private conversations(DM)")
                     print("B to return to main menu")
                     
                     sub_choice = input(">> ")
@@ -264,14 +267,14 @@ def main():
                         print("---Friends---")
                         print()
                         for friend in friends:
-                            print(f"- {friend}")
+                            print(f"- {friend[0]}")
                             print()
                     elif sub_choice == "6":
                         print()
                         print("---Friends---")
                         print()
                         for friend in friends:
-                            print(f"- {friend}")
+                            print(f"- {friend[0]}")
                             print()
                         friend_username = input("Enter the username of the friend you want to remove:")
                         print()
@@ -331,7 +334,15 @@ def main():
                                         print("Invalid input. Please enter a valid thought number or B to go back!!\nError:", err)
                                     except IndexError as err:
                                         print("You selected a non-existant thought number.\nError:", err)
-
+                    elif sub_choice == "8":
+                        friend_username = input("Please enter your friends username: \n")
+                        get_user_conversation(server_url, friend_username)
+                        print()
+                        message = input(f"Do you want to reply to {friend_username}, type NO, to stop? >>  ")
+                        if message == "NO":
+                            break
+                        post_conversation_message(server_url, friend_username, message)
+                        print()
                     elif sub_choice == "B" or sub_choice=="b":
                         print("Returning to main menu...")
                         break        
