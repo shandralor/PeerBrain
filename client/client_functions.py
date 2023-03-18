@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from typing import List, Union
+from typing import List, Tuple, Union
 
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -176,19 +176,19 @@ def get_user_friends(server_url:str)->tuple:
         
     return tuple(usernames)
 
-def update_rating_for_thought(server_url:str, key:str)->None:
+def update_rating_for_thought(server_url:str, key:bytes):
     """function to update a thoughts rating when it is read"""
     account_url_suffix = "api/v1/update-thought-rating"
 
     headers = {"Authorization": f"Bearer {get_token()}"}
 
-    params = {"key" : key}
+    params = {"key": key}
     
-    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params = params, timeout=10)
+    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params=params["key"], timeout=10)
 
     data = response.json()
 
-    if not response.status_code == 200:
+    if response.status_code != 200:
         # Print an error message
         print(data)
         print(f"Error: {response.status_code}" )
@@ -227,7 +227,7 @@ def get_all_users(server_url:str)->tuple:
     all_users = data.items()
     return all_users
 
-def get_thoughts_for_user(server_url:str, username:str)->tuple:
+def get_thoughts_for_user(server_url:str, username:str)->Tuple[str, str]:
     """Function that returns all thoughts that have the username in the reader's list for the endpoint specified in the 
     account_url_suffix variable"""
     account_url_suffix = "api/v1/thoughts"

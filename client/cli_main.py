@@ -3,6 +3,7 @@ import getpass
 import base64
 import json
 import argparse
+import os
 
 from encrypt_data import (
     generate_keypair,
@@ -289,12 +290,12 @@ def main():
                         
                         while friend_username == str() and isinstance(base_64_encr_sym_key, bytes):
                             if user_password == "":
-                                user_password = getpass.getpass(prompt ="Please confirm your password to get your messages:  \n\n")
-                            friend_username = input("Please enter the username of the friend that you want to see messages from: \n\n")
+                                user_password = getpass.getpass(prompt ="Please confirm your password to get your messages:\n\n")
+                            friend_username = input("Please enter the username of the friend that you want to see messages from:\n\n")
                             while friend_username == "":
                                 print("You didn't provide a username for your friend!\n\n")
                                 friend_username = str()
-                                friend_username += input("Please enter the username of the friend that you want to see messages from: \n\n")
+                                friend_username += input("Please enter the username of the friend that you want to see messages from:\n\n")
                             
                             base_64_encr_sym_key = get_sym_key(server_url, user_password, friend_username)
                             
@@ -306,35 +307,38 @@ def main():
                             else:
                                 while reading:
                                     print("Please choose a thought to read by entering its number or type B to go back:\n")
-                                    for i, thought in enumerate(thoughts):
-                                        print(f"{i+1}. TITLE: {thought['title']}\t RATING: {thought['rating']}")
-                                    
+                                    i = 0
+                                    for thought in thoughts:
+                                        print(f"{i + 1}. TITLE: {thought['title']}\t RATING: {thought['rating']}")
+                                        i += 1
                                     try:
                                         thought_choice = input("\nEnter thought number: ")
                                         if thought_choice == "b" or thought_choice == "B":
                                             reading = False
-                                            break
-                                        else: 
+                                        else:
                                             thought_num = int(thought_choice)
-                                            selected_thought = thoughts[thought_num-1]
+                                            selected_thought = thoughts[thought_num - 1]
                                             print(f"\nTITLE:  {selected_thought['title']}")
                                             print(f"RATING: {selected_thought['rating']}\n")
-                                            try:
-                                                decrypted_message = decrypt_message(selected_thought["content"].encode("utf-8"), encrypted_sym_key)
-                                                print(f"MESSAGE:  { decrypted_message}\n\n")
-                                                update_rating_for_thought(server_url, str(selected_thought["key"]))
-                                            except FileNotFoundError as err:
-                                                print("Error decrypting message, you may need to generate your keys still!\nError:", err)
-                                            except ValueError as err:
-                                                print("Please restart the programme to register your keys!\nError:", err)
+                                            decrypted_message = decrypt_message(selected_thought['content'], encrypted_sym_key)
+                                            print(f"MESSAGE:  {decrypted_message}\n\n")
+                                            key_path = os.path.join(os.path.dirname(__file__), 'keys', 'message.key')
+                                            with open(key_path, 'rb') as key_file:
+                                                key = key_file.readline(1)
+                                            update_rating_for_thought(server_url, key)
+                                            finished_reading = input("B: Finished reading ")
+                                            if finished_reading == "b" or finished_reading == "B":
+                                                reading = False
+                                    except FileNotFoundError as err:
+                                        print("Error decrypting message, you may need to generate your keys still!\nError:", err)
                                     except ValueError as err:
-                                        print("Invalid input. Please enter a valid thought number or B to go back!!\nError:", err)
+                                        print("Please restart the programme to register your keys!\nError:", err)
                                     except IndexError as err:
                                         print("You selected a non-existant thought number.\nError:", err)
 
                     elif sub_choice == "B" or sub_choice=="b":
                         print("Returning to main menu...")
-                        break        
+                        break
                     else:
                         print("Invalid choice")
             elif choice == "3":

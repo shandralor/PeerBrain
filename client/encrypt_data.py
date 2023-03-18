@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.fernet import Fernet
-from typing import Union
+from typing import Tuple
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import logging
 from passlib.context import CryptContext
@@ -215,7 +215,7 @@ def encrypt_message_symmetrical(message:str)->tuple:
         logging.exception(error_message)
         return (None, None)
 
-def decrypt_message(encrypted_message, encryption_sim_key):
+def decrypt_message(encrypted_message: bytes, encryption_sim_key: bytes) -> str:
     """
     Decrypts an encrypted message using a symmetric key that has been encrypted with a public key.
 
@@ -236,18 +236,20 @@ def decrypt_message(encrypted_message, encryption_sim_key):
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
             algorithm=hashes.SHA256(),
-            label=None))
+            label=None
+        )
+    )
     # Create a Fernet object with the symmetric key
     fernet = Fernet(decrypted_key)
 
     # Decrypt the encrypted message
-    decrypted_message = fernet.decrypt(encrypted_message)
+    decrypted_message_bytes = bytes(fernet.decrypt(encrypted_message))
 
     # Decode the decrypted message bytes to string
-    decrypted_message = decrypted_message.decode()
+    decrypted_message_str = decrypted_message_bytes.decode()
 
     # Print the decrypted message
-    return decrypted_message
+    return decrypted_message_str
 
 def generate_sym_key()->bytes:
     """
