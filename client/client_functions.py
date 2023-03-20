@@ -194,15 +194,20 @@ def get_user_friends(server_url:str)->tuple:
         
     return tuple(usernames)
 
-def update_rating_for_thought(server_url:str, key:bytes):
+def update_rating_for_thought(server_url:str, key:str):
     """function to update a thoughts rating when it is read"""
     account_url_suffix = "api/v1/update-thought-rating"
 
     headers = {"Authorization": f"Bearer {get_token()}"}
 
     params = {"key": key}
-    
-    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params=params["key"], timeout=10)
+
+    response = requests.get(
+        f"{server_url}{account_url_suffix}",
+        headers=headers,
+        params=params["key"],
+        timeout=10
+    )
 
     data = response.json()
 
