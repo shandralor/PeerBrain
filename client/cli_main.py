@@ -327,7 +327,7 @@ def main():
                                             print(f"MESSAGE:  {decrypted_message}\n\n")
                                             key_path = os.path.join(os.path.dirname(__file__), 'keys', 'message.key')
                                             with open(key_path, 'rb') as key_file:
-                                                key = key_file.readline(1)
+                                                key = str(key_file.read())
                                             update_rating_for_thought(server_url, key)
                                             finished_reading = input("B: Finished reading ")
                                             if finished_reading == "b" or finished_reading == "B":
@@ -342,9 +342,12 @@ def main():
                         friend_username = input("Please enter your friends username: \n")
                         get_user_conversation(server_url, friend_username)
                         print()
-                        message = input(f"Do you want to reply to {friend_username}, type NO, to stop? >>  ")
-                        if message == "NO":
-                            break
+                        message = str()
+                        print("1. Yes")
+                        print("2. No")
+                        choice = int(input(f"Do you want to reply to {friend_username}? "))
+                        if choice == 1:
+                            message += str(input("Enter your message: "))
                         post_conversation_message(server_url, friend_username, message)
                         print()
                     elif sub_choice == "B" or sub_choice=="b":
