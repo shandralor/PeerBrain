@@ -190,7 +190,7 @@ def main():
                     print("5. Check friends list")
                     print("6. Remove a friend from your friend list")
                     print("--------------------------------")
-                    print("7. New thought display function test")
+                    print("7. New system to view messages individually. This will also increase their rating.")
                     print("8. Private conversations(DM)")
                     print("B to return to main menu")
                     
