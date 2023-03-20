@@ -201,8 +201,13 @@ def update_rating_for_thought(server_url:str, key:bytes):
     headers = {"Authorization": f"Bearer {get_token()}"}
 
     params = {"key": key}
-    
-    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params=params["key"], timeout=10)
+
+    response = requests.get(
+        f"{server_url}{account_url_suffix}",
+        headers=headers,
+        params=params["key"],
+        timeout=10
+    )
 
     data = response.json()
 

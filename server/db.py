@@ -420,10 +420,11 @@ def push_message_to_database(speaker:str, receiver:str, message:str):
         order_number+=1
         update = {
             f"conversation.{order_number}" : {
-            f"speaker" : speaker,
-            f"text" : message,
-            f"date_time" : str(datetime.datetime.utcnow())
-        }}
+                "speaker" : speaker,
+                "text" : message,
+                "date_time" : str(datetime.datetime.utcnow())
+            }
+        }
         try:
             DM_MESSAGES.update(update, generated_database_key_hash)
         except Exception as error_message:
@@ -433,13 +434,15 @@ def push_message_to_database(speaker:str, receiver:str, message:str):
         order_number = 1
     
         update = {
-        "key": generated_database_key_hash,
-        "conversation": {
-            order_number: {
-                "speaker": speaker,
-                "text": message,
-                "date_time": str(datetime.datetime.utcnow())
-            }    }  }
+            "key": generated_database_key_hash,
+            "conversation": {
+                order_number: {
+                    "speaker": speaker,
+                    "text": message,
+                    "date_time": str(datetime.datetime.utcnow())
+                }
+            }
+        }
         try:
             DM_MESSAGES.put(update)
         except Exception as error_message:
