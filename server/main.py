@@ -16,12 +16,14 @@ from jose import JWTError, jwt
 import html
 
 #---LOCAL IMPORTS---#
-from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB, PasswordResetUser
+from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB, PasswordResetUser, \
+    MessageObject
 from db import add_friend, change_password, create_thought, create_user, \
     gen_pw_hash, get_encrypted_sym_key, get_friends_by_username, \
          get_thoughts, get_user_by_email, \
             get_user_by_username, get_users, send_keys_to_remote_server, \
-                confirm_registration_token, create_password_reset_token, get_password_token
+                confirm_registration_token, create_password_reset_token, get_password_token,remove_friend, \
+                    update_thought_rating, get_conversation, push_message_to_database
                 
 
 #---LOAD ENV VARS---#
@@ -94,6 +96,7 @@ def get_user(db: dict, username: str) -> Union[UserInDB, None]:
     """
     db = get_users()
     if username in db:
+        #username below needs to become keys if the database object for user gets changed
         user_data = db[username]
         return UserInDB(**user_data)
 
@@ -279,9 +282,118 @@ async def confirm_email(token: str, username: str):
     
     if token == user_confirm_token:
         confirm_registration_token(user_key)
-        return {"Success" : "Email verification succesful. Your account is now active!"}
+        html_content = f"""<!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                
+                <meta charset="utf-8">
+                <title>PeerBrain</title>
+                <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+                <link rel="stylesheet" href="https://andrewstech.github.io/public/peer-brain/style.css">
+
+                
+
+            </head>
+
+            <body>
+                
+                
+                <div class="auth-wrapper">
+                    <div class="auth-content">
+                        <div class="auth-bg">
+                            <span class="r"></span>
+                            <span class="r s"></span>
+                            <span class="r s"></span>
+                            <span class="r"></span>
+                        </div>
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
+                                <div>
+                                    <hr>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>Email verification succesful!</a></p>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>Your account is now active!</a></p>
+                                    <hr>
+                                </div>
+
+                                <br />
+                                <br />
+
+                                
+
+                                <a class="fa fa-github" style="font-size:24px" href="https://github.com/shandralor/PeerBrain"></a>
+                                <br />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 </body>
+            </html>"""
+        return HTMLResponse(content=html_content, status_code=200)     
+        
     else:
-        return {"Message" : "Email verification already completed!"}
+        html_content = f"""<!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                
+                <meta charset="utf-8">
+                <title>PeerBrain</title>
+                <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+                <link rel="stylesheet" href="https://andrewstech.github.io/public/peer-brain/style.css">
+
+                
+
+            </head>
+
+            <body>
+                
+                
+                <div class="auth-wrapper">
+                    <div class="auth-content">
+                        <div class="auth-bg">
+                            <span class="r"></span>
+                            <span class="r s"></span>
+                            <span class="r s"></span>
+                            <span class="r"></span>
+                        </div>
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
+                                <div>
+                                    <hr>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>Email verification was already completed!</a></p>
+                                    <hr>
+                                </div>
+
+                                <br />
+                                <br />
+
+                                
+
+                                <a class="fa fa-github" style="font-size:24px" href="https://github.com/shandralor/PeerBrain"></a>
+                                <br />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </body>
+            </html>"""
+        return HTMLResponse(content=html_content, status_code=200) 
+        
 
 @app.post("/get_password_reset_token")
 async def get_password_reset_token(user : PasswordResetUser):    
@@ -462,6 +574,25 @@ async def get_thought(query_str : str, current_user : User = Depends(get_current
     """
     return get_thought(query_str)
 
+@app.get("/api/v1/update-thought-rating")
+async def update_thoughts_rating(key : str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
+    or a list of thoughts that match partially with the query string.
+    
+    Parameters:
+    - query_str (str): The query string to use to retrieve thoughts.
+    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
+    retrieve the user. Defaults to None.
+    
+    Returns:
+    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    return update_thought_rating(key)
+
 @app.get("/api/v1/friends")
 async def get_friends( current_user : User = Depends(get_current_active_user)):
     """
@@ -499,6 +630,31 @@ async def add_friends( friend_username: str, current_user : User = Depends(get_c
     print_and_log("added a friend", current_user.username)
     return add_friend(current_user.username, friend_username)
 
+@app.get("/api/v1/remove-friend")
+async def remove_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function that removes a friend from the current user's friend list.
+    
+    Parameters:
+    - friend_username (str): The username of the friend to be added.
+    - current_user (User): The currently authenticated user.
+    
+    Returns:
+    - Dict[str, Any]: A dictionary with a message indicating that the friend was removed.
+    
+    Raises:
+    - HTTPException: Raised if the friend could not be added.
+    """
+    
+    remove_friend_object = remove_friend(current_user.username, friend_username)
+    if remove_friend_object == {"Username" : "Not Found"}:
+        raise HTTPException(status_code=400, detail="No friend for that username!")
+    elif remove_friend_object == {"Username" : "You can't remove yourself as your friend!"}:
+        raise HTTPException(status_code=400, detail="You can't remove yourself as your friend!")
+    else:
+        print_and_log(f"removed friend {friend_username}", current_user.username)
+        return
+    
 @app.post("/api/v1/thoughts")
 async def create_new_thought(thought : Thought, current_user : User = Depends(get_current_active_user)):
     """
@@ -537,6 +693,30 @@ async def read_users_me(current_user : User = Depends(get_current_active_user)):
     
     print_and_log("consulted his user details", current_user.username)
     return current_user
+
+@app.get("/api/v1/dm-conversation")
+async def get_users_conversation(friend_username:str,current_user : User = Depends(get_current_active_user)):
+    """
+    """
+    
+    #print_and_log("requested private conversation data", current_user.username)
+    conversation_data =  get_conversation(current_user.username,friend_username)
+    
+    return conversation_data
+
+@app.post("/api/v1/dm-conversation")
+async def post_conversation(message_object : MessageObject,  current_user : User = Depends(get_current_active_user)):
+    """
+    """
+    
+    friend_username = message_object.friend_username
+    message = message_object.message
+    username = current_user.username
+        
+    if push_message_to_database(username, friend_username, message):
+        print_and_log("Createad a DM", current_user.username)
+        return {"Message" : "Uploaded successfully"}
+    return
 
 @app.post("/api/v1/post_key_store")
 async def post_keystore_user(keystore : KeyStore,  current_user : User = Depends(get_current_active_user)):

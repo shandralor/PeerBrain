@@ -1,7 +1,7 @@
 import os
-import requests
 import json
-from typing import List, Union
+import requests
+from typing import List, Tuple, Union
 
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -11,7 +11,7 @@ import getpass
 #---VARIABLES---#
 login_headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-def log_in_to_server(username, password, server_url):
+def log_in_to_server(username:str, password:str, server_url):
 
     #--> Check if the token.json file exists in the current directory
     if os.path.exists("token.json"):
@@ -25,7 +25,7 @@ def log_in_to_server(username, password, server_url):
         #-->Token is present but no longer valid
         if response.status_code == 401:
             # Define the payload with the username and password
-            payload = {"username": username, "password": password}
+            payload = {"username": username.lower(), "password": password}
             login_response = requests.post(server_url, data=payload, timeout=10)
 
             # Extract the JWT token from the response
@@ -44,7 +44,7 @@ def log_in_to_server(username, password, server_url):
         #-->No token found, request a new one
         
         # Define the payload with the username and password
-        payload = {"username": username, "password": password}
+        payload = {"username": username.lower(), "password": password}
         # Make a POST request to the login endpoint with the payload
         login_response = requests.post(server_url, data=payload, headers=login_headers, timeout=10)
 
@@ -71,20 +71,21 @@ def create_token(jwt_token:str)->None:
         data = {"token": jwt_token}
         json.dump(data, file)
 
-def get_account_info(server_url:str)->None:
+def get_account_info(server_url:str)->tuple:
     """Function that returns account details for the endpoint specified in the 
     account_url_suffix variable"""
     account_url_suffix = "api/v1/me"
     headers = {"Authorization": f"Bearer {get_token()}"}
     response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, timeout=10)
     data = response.json()
+
     try:
         return data['username'], data['email']
     except KeyError:
         print(data["detail"])
         print()
 
-def get_sym_key(server_url:str, password:str, friend_username:str):
+def get_sym_key(server_url:str, password:str, friend_username:str)->str:
     """Function that uploads the encrypted symmetric key from the db"""
 
     account_url_suffix = "api/v1/user_key_request"
@@ -95,7 +96,7 @@ def get_sym_key(server_url:str, password:str, friend_username:str):
         "friend_username" : friend_username      
     }
     
-    response = requests.post(f"{server_url}{account_url_suffix}", json = payload,  headers=headers, timeout=10)    
+    response = requests.post(f"{server_url}{account_url_suffix}", json=payload,  headers=headers, timeout=10)    
     data = response.json()
     return data
 
@@ -107,7 +108,7 @@ def post_thought(server_url:str, username:str, title:str, encrypted_message:byte
     headers = {"Authorization": f"Bearer {get_token()}"}
     
     payload={
-        "username" : username,
+        "username" : username.lower(),
         "title" : title,
         "content" : encrypted_message.decode("utf-8")        
     }
@@ -120,7 +121,7 @@ def register_user(server_url:str, username:str, user_email:str, user_password:st
     account_url_suffix = "api/v1/users"
 
     payload = {
-    'username': username,
+    'username': username.lower(),
     'email': user_email,
     'user_password': user_password,
     "friends" : friends,
@@ -159,7 +160,25 @@ def reset_password(server_url:str, username:str):
     else:
         print("Something went wrong with the password reset request!")
 
-def get_user_friends(server_url:str)->None:
+def post_conversation_message(server_url:str, friend_username:str, message:str):
+    """Function to start the password reset process."""
+    account_url_suffix = "api/v1/dm-conversation"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+    
+    data = {
+        "friend_username" : friend_username,
+        "message" : message
+    }
+    
+    response = requests.post(f"{server_url}{account_url_suffix}", json=data,  headers=headers, timeout=10)
+
+    if response.status_code ==200:
+        print("Message set succesfully!")    
+    else:
+        print("Something went wrong with sending your message!")
+
+def get_user_friends(server_url:str)->tuple:
     """function to return a list of all user friends."""
     account_url_suffix = "api/v1/friends"
 
@@ -170,11 +189,78 @@ def get_user_friends(server_url:str)->None:
     data = response.json()
 
     usernames = []
-    for key, value in data.items():
+    for key in data.items():
         usernames.append(key)
         
     return tuple(usernames)
 
+def update_rating_for_thought(server_url:str, key:str):
+    """function to update a thoughts rating when it is read"""
+    account_url_suffix = "api/v1/update-thought-rating"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+
+    params = {"key": key}
+
+    response = requests.get(
+        f"{server_url}{account_url_suffix}",
+        headers=headers,
+        params=params["key"],
+        timeout=10
+    )
+
+    data = response.json()
+
+    if response.status_code != 200:
+        # Print an error message
+        print(data)
+        print(f"Error: {response.status_code}" )
+
+def get_user_conversation(server_url:str, friend_username:str)->List:
+    """function to get a conversation if it exists"""
+    account_url_suffix = "api/v1/dm-conversation"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+
+    params = {"friend_username" : friend_username}
+    
+    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params=params, timeout=10)
+
+    data = response.json()
+    print("\n\n")
+    print('--------')
+    if type(data) == dict:
+        print(data)
+    else:
+        #prints the conversation
+        for message in json.loads(data):
+            print(f"{message['speaker']} :{ message['text']}\n")
+    print('--------')
+    if not response.status_code == 200:
+        # Print an error message
+        print(data)
+        print(f"Error: {response.status_code}" )
+
+def remove_user_friends(server_url:str, friend_username:str)->None:
+    """function to return a list of all user friends."""
+    account_url_suffix = "api/v1/remove-friend"
+
+    headers = {"Authorization": f"Bearer {get_token()}"}
+
+    params = {"friend_username" : friend_username}
+    
+    response = requests.get(f"{server_url}{account_url_suffix}", headers=headers, params = params, timeout=10)
+
+    data = response.json()
+
+    if response.status_code == 200:
+        # Print the response content
+        print(f"Succes : You successfully removed {friend_username} from your friends list!")
+    else:
+        # Print an error message
+        print(data)
+        print(f"Error: {response.status_code}" )
+        
 def get_all_users(server_url:str)->tuple:
     """Development function to get all users in the database. Will be deprecated on app release."""
     account_url_suffix = "api/v1/users"
@@ -189,14 +275,13 @@ def get_all_users(server_url:str)->tuple:
     all_users = data.items()
     return all_users
 
-def get_thoughts_for_user(server_url:str, username:str)->None:
+def get_thoughts_for_user(server_url:str, username:str)->Tuple[str, str]:
     """Function that returns all thoughts that have the username in the reader's list for the endpoint specified in the 
     account_url_suffix variable"""
     account_url_suffix = "api/v1/thoughts"
     headers = {"Authorization": f"Bearer {get_token()}"}
     response = requests.get(f"{server_url}{account_url_suffix}/{username}", headers=headers, timeout=10)
     data = response.json()
-
     return json.loads(data)
 
 def wrap_encrypt_sym_key(sym_key:bytes, server_url:str, friend_username: Union[str, None] = None)->Union[str, bytes]:
@@ -264,7 +349,7 @@ def login(server_url:str, username:str, password:str)->None:
     """Function that logs the user in"""
 
     # Define the payload with the username and password
-    payload = {"username": username, "password": password}
+    payload = {"username": username.lower(), "password": password}
 
     # Make a POST request to the login endpoint with the payload
     login_response = requests.post(server_url, data=payload, headers=login_headers, timeout=10)
@@ -298,6 +383,8 @@ def login_with_token(server_url:str)->None:
     password = getpass.getpass(prompt = "Please enter your password: ")
     
     # Token is not valid or does not exist, log in with username and password
+    login(server_url, username.lower(), password)
+
     if login(server_url, username, password):
         return True
     else:

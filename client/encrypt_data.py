@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.fernet import Fernet
-from typing import Union
+from typing import Tuple
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import logging
 from passlib.context import CryptContext
@@ -191,7 +191,7 @@ def save_public_key(public_key: bytes) -> None:
     else:
         print("Public key not saved successfully, please try again!")
         
-def encrypt_message_symmetrical(message:str)-> bytes:
+def encrypt_message_symmetrical(message:str)->tuple:
     """
     This function encrypts a message using a symmetric key and returns the key and the encrypted message as bytes. 
 
@@ -208,11 +208,14 @@ def encrypt_message_symmetrical(message:str)-> bytes:
         fernet = Fernet(symmetric_key)
         # Encrypt the text string
         encrypted_text = fernet.encrypt(message.encode())
-        return symmetric_key, encrypted_text
-    except Exception as error_message:
+        bytes_tuple = (bytes(symmetric_key))
+        bytes_tuple = (bytes_tuple, encrypted_text)
+        return bytes_tuple
+    except Exception as error_message: # TODO: Add specific exception, custom
         logging.exception(error_message)
+        return (None, None)
 
-def decrypt_message(encrypted_message, encryption_sim_key):
+def decrypt_message(encrypted_message: bytes, encryption_sim_key: bytes) -> str:
     """
     Decrypts an encrypted message using a symmetric key that has been encrypted with a public key.
 
@@ -233,20 +236,22 @@ def decrypt_message(encrypted_message, encryption_sim_key):
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
             algorithm=hashes.SHA256(),
-            label=None))
+            label=None
+        )
+    )
     # Create a Fernet object with the symmetric key
     fernet = Fernet(decrypted_key)
 
     # Decrypt the encrypted message
-    decrypted_message = fernet.decrypt(encrypted_message)
+    decrypted_message_bytes = bytes(fernet.decrypt(encrypted_message))
 
     # Decode the decrypted message bytes to string
-    decrypted_message = decrypted_message.decode()
+    decrypted_message_str = decrypted_message_bytes.decode()
 
     # Print the decrypted message
-    return decrypted_message
+    return decrypted_message_str
 
-def generate_sym_key()->None:
+def generate_sym_key()->bytes:
     """
     Generates a new symmetric encryption key using Fernet and saves it to a file.
 
