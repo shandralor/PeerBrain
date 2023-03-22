@@ -12,3 +12,4 @@ uvicorn
 bcrypt
 pydantic[email]
 python-multipart
+pymongo
