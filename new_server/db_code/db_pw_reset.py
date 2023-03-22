@@ -10,6 +10,8 @@ from pymongo.errors import (ConnectionFailure, DuplicateKeyError,
                             InvalidDocument, PyMongoError)
 
 #---DB COLLECTION INIT---#
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+PeerbrainDB = client["peerbrain_db"]
 PW_RESET = PeerbrainDB["pw_reset"]
 PW_RESET.create_index("created_at", expireAfterSeconds=300)
 

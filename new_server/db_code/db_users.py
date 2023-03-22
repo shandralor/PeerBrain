@@ -10,6 +10,8 @@ from email_code.email_code import confirmation_mail
 from passlib.context import CryptContext
 
 #---DB COLLECTION INIT---#
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+PeerbrainDB = client["peerbrain_db"]
 USERS = PeerbrainDB["users"]
 
 #---PW ENCRYPT INIT---#
