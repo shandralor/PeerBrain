@@ -4,7 +4,6 @@ import secrets
 import pymongo
 import logging
 from pymongo.errors import DuplicateKeyError, InvalidDocument, ConnectionFailure, PyMongoError
-from db_main import PeerbrainDB
 from dotenv import load_dotenv
 from email_code.email_code import confirmation_mail
 from passlib.context import CryptContext

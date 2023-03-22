@@ -3,7 +3,6 @@ import secrets
 from datetime import datetime, timedelta
 
 import pymongo
-from db_main import PeerbrainDB
 from dotenv import load_dotenv
 from email_code.email_code import password_reset_mail
 from pymongo.errors import (ConnectionFailure, DuplicateKeyError,
