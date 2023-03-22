@@ -14,6 +14,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from jose import JWTError, jwt
 import html
+import sentry_sdk
 
 #---LOCAL IMPORTS---#
 from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB, PasswordResetUser
@@ -22,8 +23,18 @@ from db import add_friend, change_password, create_thought, create_user, \
          get_thoughts, get_user_by_email, \
             get_user_by_username, get_users, send_keys_to_remote_server, \
                 confirm_registration_token, create_password_reset_token, get_password_token
-                
+#---Bug reporting and performance ---#
 
+sentry_sdk.init(
+    dsn="https://ae48bd3df1aa40549995d970162f85eb@o4504878133018624.ingest.sentry.io/4504878182105089",
+
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production,
+    traces_sample_rate=1.0,
+)
+
+    
 #---LOAD ENV VARS---#
 load_dotenv()
 
