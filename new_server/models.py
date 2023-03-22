@@ -18,7 +18,6 @@ class User(BaseModel): # pylint: disable=too-few-public-methods
     """
     
     username: str
-    key: Optional[UUID] = uuid4()
     email: EmailStr
     user_password : Optional[str]
     disabled: bool = False

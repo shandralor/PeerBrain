@@ -768,3 +768,5 @@ async def get_user_key_store(sym_key_req : SymKeyRequest, current_user : User = 
         return get_encrypted_sym_key(username, password, friend_username)
     else:
         return {"Message" : "Error in getting the encrypted key"}
+
+

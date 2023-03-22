@@ -12,7 +12,7 @@ from pymongo.errors import (ConnectionFailure, DuplicateKeyError,
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 PeerbrainDB = client["peerbrain_db"]
 PW_RESET = PeerbrainDB["pw_reset"]
-PW_RESET.create_index("created_at", expireAfterSeconds=300)
+
 
 #---PW_RESET COLLECTION FUNCTIONS---#
 def create_password_reset_token(username:str, email:str):
@@ -32,6 +32,7 @@ def create_password_reset_token(username:str, email:str):
     - ConnectionFailure: If there is an error connecting to the database.
     - PyMongoError: If there is an error inserting the document into the "PW_RESET" collection.
     """
+    PW_RESET.create_index("created_at", expireAfterSeconds=300)
     reset_token = secrets.token_hex(32)
     created_at = datetime.utcnow()
         
@@ -41,7 +42,7 @@ def create_password_reset_token(username:str, email:str):
         "created_at" : created_at}
     
     try:
-        pw_reset_token_document=PW_RESET.insert_one(password_reset_object)
+        pw_reset_token_document=PW_RESET.replace_one({'_id': username}, password_reset_object, upsert=True)
         if pw_reset_token_document.acknowledged:
             password_reset_mail(email, username, reset_token)
     except DuplicateKeyError as e:
@@ -85,4 +86,14 @@ def get_password_token(username:str)->dict:
     else:
         logging.info(f"Password reset token for {username} retrieved successfully!")
 
-    
+def delete_password_token(username):
+    try:
+        result = PW_RESET.delete_one({"_id":username})
+        if result.deleted_count == 1:
+            print('Password reset token deleted')
+        else:
+            print('Password reset token not found')    
+    except PyMongoError as e:
+        logging.error("Error: %s", e)
+    else:
+        logging.info(f"Password reset token deleted successfully for user {username}")

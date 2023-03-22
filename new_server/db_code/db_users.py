@@ -41,7 +41,7 @@ def get_users() -> dict:
         Exception: If there is an error while fetching users from the database.
     """
     try:
-        all_users = {user["_id"]: user for user in USERS.find()}
+        all_users = {user["username"]: user for user in USERS.find()}
         return all_users
     except ConnectionFailure as e:
         logging.error("Error: Database connection failed - %s", e)
@@ -67,7 +67,7 @@ def get_user_by_username(username:str) -> dict:
         PyMongoError: If there is any other error while querying the database.
     """   
     try:
-        user = USERS.find_one({"_id": username})
+        user = USERS.find_one({"username": username})
         if user:
             return user
         else:
@@ -133,7 +133,7 @@ def create_user(username:str, email:str, pw_to_hash:str):
 
     secret_token = secrets.token_hex(32)
     
-    new_user = {"_id" : username,
+    new_user = {"username" :username,
                 "hashed_pw" : gen_pw_hash(pw_to_hash), 
                 "email" : email,
                 "friends" : [],
@@ -173,7 +173,7 @@ def change_password(username, pw_to_hash)->str:
         PyMongoError: If there is any other error during the update operation.
     """
     
-    query = {'_id': username}   
+    query = {'username': username}   
     hashed_pw = gen_pw_hash(pw_to_hash)
     update= {'$set': {'hashed_pw': hashed_pw}}
     
@@ -208,7 +208,7 @@ def confirm_registration_token(username:str)->None:
         pymongo.errors.UpdateResult: If the update operation fails.
         PyMongoError: If there is any other error during the update operation.
     """
-    query = {'_id': username}  
+    query = {'username': username}  
     update = {'$set': {
         "disabled" : False,
         "confirmation_token" : "verified"
