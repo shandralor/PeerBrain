@@ -208,12 +208,13 @@ def main():
                         print()
                         title = input("Please choose a title for your Thought: \n\n>>TITLE: ")                        
                         message = input("What would you like to post? : \n\nMESSAGE>>: ")
-                        enc_mess = bytes(encrypt_message_symmetrical(message))
+                        sym_key, enc_mess = encrypt_message_symmetrical(message)
                         print()
                         
-                        post_thought(server_url, username, title, enc_mess)
+                        post_thought(server_url, username, title, enc_mess)                         
                                      
                         print("Message uploaded successfully!")
+                                            
                                             
                     elif sub_choice == "3":
                         get_user_friends(server_url)

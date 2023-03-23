@@ -17,7 +17,7 @@ from passlib.context import CryptContext
 sys.path.append('./db_code')
 sys.path.append('./email_code')
 
-import db_pw_reset, db_users, db_dm, db_friends, db_keys
+import db_pw_reset, db_users, db_dm, db_friends, db_keys, db_thoughts
 from models import (KeyStore, 
                     PubKey, 
                     SymKeyRequest, 
@@ -522,6 +522,7 @@ async def submit_form(new_password: str = Form(...), confirm_password: str = For
       
 #---AUTH ENDPOINTS---#
 
+#USER#
 @app.get("/api/v1/token-test")
 async def token_test(current_user : User = Depends(get_current_active_user)):
     """
@@ -560,4 +561,228 @@ async def read_users_me(current_user : User = Depends(get_current_active_user)):
     
     return current_user
 
+#FRIENDS#
+@app.get("/api/v1/friends")
+async def get_friends( current_user : User = Depends(get_current_active_user)):
+    """
+    FastAPI endpoint that returns a list of friends for the current authenticated user.
+    Uses the get_current_active_user dependency to check that the user is authenticated.
+    
+    Parameters:
+    - current_user (User, optional): The current authenticated user. Defaults to Depends(get_current_active_user).
+    
+    Returns:
+    - List[Friend]: A list of friends for the current user.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    
+    return db_friends.get_friends_by_username(current_user.username)
 
+@app.post("/api/v1/friends/{friend_username}")
+async def add_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function that adds a friend to the current user's friend list.
+    
+    Parameters:
+    - friend_username (str): The username of the friend to be added.
+    - current_user (User): The currently authenticated user.
+    
+    Returns:
+    - Dict[str, Any]: A dictionary with a message indicating that the friend was added.
+    
+    Raises:
+    - HTTPException: Raised if the friend could not be added.
+    """
+    
+    add_friend_object = db_friends.add_friend(current_user.username, friend_username)
+    if add_friend_object == {"Friend username" : "Not Found"}:
+      raise HTTPException(status_code=400, detail="No friend for that username!")
+    elif add_friend_object == {"Friend username" : "You can't add yourself as your friend!"}:
+      raise HTTPException(status_code=400, detail="You can't add yourself as your friend!")
+    elif add_friend_object == {"Friend username" : "Already a friend!"}:
+      raise HTTPException(status_code=400, detail="User is already a friend!")
+    else:
+        return
+      
+@app.get("/api/v1/remove-friend")
+async def remove_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function that removes a friend from the current user's friend list.
+    
+    Parameters:
+    - friend_username (str): The username of the friend to be added.
+    - current_user (User): The currently authenticated user.
+    
+    Returns:
+    - Dict[str, Any]: A dictionary with a message indicating that the friend was removed.
+    
+    Raises:
+    - HTTPException: Raised if the friend could not be added.
+    """
+    
+    remove_friend_object = db_friends.remove_friend(current_user.username, friend_username)
+    if remove_friend_object == {"Friend username" : "Not Found"}:
+      raise HTTPException(status_code=400, detail="No friend for that username!")
+    elif remove_friend_object == {"Friend username" : "You can't remove yourself as your friend!"}:
+      raise HTTPException(status_code=400, detail="You can't remove yourself as your friend!")
+    elif remove_friend_object == {"Friend username" : "Not in your friend list!"}:
+      raise HTTPException(status_code=400, detail="That user is not in your friend list!")
+    else:
+        return
+
+#KEYS#
+@app.post("/api/v1/post_key_store")
+async def post_keystore_user(keystore : KeyStore,  current_user : User = Depends(get_current_active_user)):
+    """
+    Endpoint to upload a user's public and symmetric keys to a remote server.
+    
+    Parameters:
+    - keystore (KeyStore): A Pydantic model representing the user's public and symmetric keys.
+    - current_user (User): The current authenticated user, obtained from the JWT token.
+    
+    Returns:
+    - A dictionary with a single key-value pair, indicating that the public key was uploaded successfully.
+    
+    Side Effects:
+    - Sends the user's public and symmetric keys, along with their username and hashed password, to a remote server.
+    - Logs a message indicating that the user uploaded their keys.
+    """
+    
+    public_key = keystore.pub_key
+    symmetric_key = keystore.symmetric_key
+    username = current_user.username
+    hashed_password = db_users.get_user_by_username(username)["hashed_pw"]
+    
+    db_keys.send_keys_to_remote_server(public_key, symmetric_key, username, hashed_password)
+    
+    return {"PUBLIC KEY" : "UPLOADED"}
+
+@app.post("/api/v1/user_key_request")
+async def get_user_key_store(sym_key_req : SymKeyRequest, current_user : User = Depends(get_current_active_user)):
+    """
+    Endpoint for getting an encrypted symmetric key for a user's friend.
+    
+    Parameters:
+    - sym_key_req (SymKeyRequest): A SymKeyRequest object containing the user's password and the friend's username.
+    - current_user (User): A User object representing the currently authenticated user.
+    
+    Returns:
+    - If the friend's username is in the authenticated user's friends list, returns a dictionary containing the encrypted symmetric key.
+    - If the friend's username is not in the authenticated user's friends list, returns a dictionary with a "Message" key indicating an error.
+    """
+    
+    username = current_user.username
+    password = sym_key_req.user_password
+    friend_username = sym_key_req.friend_username
+    
+        
+    if friend_username in db_friends.get_friends_by_username(username).keys():
+        return db_keys.get_encrypted_sym_key(username, password, friend_username)
+    else:
+        return {"Message" : "Error in getting the encrypted key"}
+
+#THOUGHTS#
+@app.post("/api/v1/thoughts")
+async def create_new_thought(thought : Thought, current_user : User = Depends(get_current_active_user)):
+    """
+    Endpoint to create a new thought.
+    
+    Parameters:
+    - thought (Thought): The thought to be created, passed as a Pydantic model.
+    - current_user (User): The currently authenticated user, passed as a Pydantic model, with the help of the `get_current_active_user` dependency.
+    
+    Returns:
+    - A dictionary with a single key-value pair, where the key is "Thought" and the value is "Successfully created!".
+    """
+    username = thought.username
+    title = thought.title
+    content = thought.content
+    
+    db_thoughts.create_thought(username, title, content)
+    
+    return {"Thought" : "Successfully created!"}
+
+@app.get("/api/v1/thoughts/{username}")
+async def get_thoughts_for_user( username: str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function that returns a list of thoughts for the specified user.
+    If authentication fails, it raises an HTTPException with a 401 Unauthorized status code.
+    
+    Parameters:
+    - username (str): The username of the user to retrieve thoughts for.
+    - current_user (User, optional): The currently authenticated user object. Defaults to Depends(get_current_active_user).
+    
+    Returns:
+    - List[Thought]: A list of Thought objects for the specified user.
+    
+    Raises:
+    - HTTPException: Raised if the authentication fails.
+    """
+    
+    return db_thoughts.get_thoughts(username)
+  
+@app.get("/api/v1/update-thought-rating")
+async def update_thoughts_rating(key : str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
+    or a list of thoughts that match partially with the query string.
+    
+    Parameters:
+    - query_str (str): The query string to use to retrieve thoughts.
+    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
+    retrieve the user. Defaults to None.
+    
+    Returns:
+    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    return db_thoughts.update_thought_rating(key)
+
+#function below not working yet, need to check why
+@app.get("/api/v1/thoughts/{query_str}")
+async def get_thought_by_query(query_str : str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
+    or a list of thoughts that match partially with the query string.
+    
+    Parameters:
+    - query_str (str): The query string to use to retrieve thoughts.
+    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
+    retrieve the user. Defaults to None.
+    
+    Returns:
+    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    return db_thoughts.get_thought(query_str)
+  
+#DMS#
+@app.get("/api/v1/dm-conversation")
+async def get_users_conversation(friend_username:str,current_user : User = Depends(get_current_active_user)):
+    """
+    """
+    
+    #print_and_log("requested private conversation data", current_user.username)
+    conversation_data =  db_dm.get_conversation(current_user.username,friend_username)
+    
+    return conversation_data
+
+@app.post("/api/v1/dm-conversation")
+async def post_conversation(message_object : MessageObject,  current_user : User = Depends(get_current_active_user)):
+    """
+    """
+    
+    friend_username = message_object.friend_username
+    message = message_object.message
+    username = current_user.username
+        
+    if db_dm.push_message_to_database(username, friend_username, message):
+       
+        return {"Message" : "Uploaded successfully"}
+    return
