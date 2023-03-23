@@ -331,9 +331,11 @@ async def reset_user_password(username:str, token:str):
             <title>PeerBrain</title>
             <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
             <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <link rel="stylesheet" href="https://andrewstech.github.io/public/peer-brain/style.css">
 
             <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
             <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+            <script async src="https://andrewstech.github.io/public/peer-brain/password.js"></script>
 
             
 
@@ -355,7 +357,7 @@ async def reset_user_password(username:str, token:str):
                             <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
                             <div>
                                 <p class="mb-0 text-muted disabled"><a href="" disabled>Password Reset</a></p>
-                                    <form action="/{RESET_PASSWORD_ROUTE}/submit" method="post">
+                                    <form id="data-form" action="/{RESET_PASSWORD_ROUTE}/submit" method="post">
                                         <input type= "hidden" id = "username" name = "username" value = "{username}">
                                         <input type= "hidden" id = "token" name = "token" value = "{token}">
                                         <label for="fname">New Password:</label><br>
@@ -363,6 +365,10 @@ async def reset_user_password(username:str, token:str):
                                         <label for="lname">Confirm Password:</label><br>
                                         <input type="password" id="confirm_password" name="confirm_password" minlength="8" required><br><br>
                                         <input type="submit" value="Submit">
+                                        <p class="error hidden" id="password-error">This password was found in a database of compromised passwords. Using a password that
+                                            has been breached is seriously dangerous.
+                                            If you use this password for any other services then you should change it immediately.</p>
+                                        <p class="ok hidden" id="password-ok">That password is secure!</p>
                                     </form> 
                             </div>
                             <br />
@@ -374,7 +380,7 @@ async def reset_user_password(username:str, token:str):
                 </div>
             </div>
         </body>
-                </html>
+        </html>
         """.format(
             new_password = html.escape(""),
             confirm_password = html.escape(""),
