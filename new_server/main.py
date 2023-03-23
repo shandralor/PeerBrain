@@ -766,6 +766,15 @@ async def get_thought_by_query(query_str : str, current_user : User = Depends(ge
 @app.get("/api/v1/dm-conversation")
 async def get_users_conversation(friend_username:str,current_user : User = Depends(get_current_active_user)):
     """
+    Fetches a private conversation between the current user and a friend by their username.
+    
+    :params: 
+        friend_username: The username of the friend whose conversation to fetch.
+        current_user: The current authenticated user, retrieved via the `get_current_active_user` dependency.
+    
+    :return: 
+        The conversation data between the two users.
+    
     """
     
     #print_and_log("requested private conversation data", current_user.username)
@@ -776,13 +785,25 @@ async def get_users_conversation(friend_username:str,current_user : User = Depen
 @app.post("/api/v1/dm-conversation")
 async def post_conversation(message_object : MessageObject,  current_user : User = Depends(get_current_active_user)):
     """
+    Uploads a message to a conversation between the current user and a friend.
+
+    Arguments:
+        - message_object: a MessageObject instance containing the message and the friend's username.
+        - current_user: a User instance representing the current authenticated user.
+
+    Returns:
+        - A dictionary with a "Message" key and a corresponding value indicating whether the message was uploaded successfully, or
+        - An error message if the message could not be uploaded.
     """
     
     friend_username = message_object.friend_username
     message = message_object.message
     username = current_user.username
         
-    if db_dm.push_message_to_database(username, friend_username, message):
-       
+    message_status = db_dm.push_message_to_database(username, friend_username, message)
+    if message_status is None:   
         return {"Message" : "Uploaded successfully"}
+    else:
+        return message_status
     return
+

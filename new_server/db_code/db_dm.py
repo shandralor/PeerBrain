@@ -69,11 +69,15 @@ def get_message_status(generated_database_key_hash:str):
 
     Returns:
         int or None: The highest order number for the conversation if it exists, otherwise None.
+        
+    Raises:
+        PyMongoError: If there is an error while querying the database.
+
     """
     try:
         status = DM_MESSAGES.find_one({"key" : generated_database_key_hash})
         if status:
-            return max(map(int, status["conversation"].keys()))
+            return (status["conversation"])
     except PyMongoError as e:
         logging.error("Error: %s", e)
     else:
@@ -95,39 +99,61 @@ def get_conversation(speaker:str, receiver:str):
         If no conversation is found, a dictionary containing an error message.
     """
     conversation_key = generate_database_key_hash(speaker, receiver)
-    conversation_object = DM_MESSAGES.find_one({"key" : generated_database_key_hash})
+    conversation_object = DM_MESSAGES.find_one({"key" : conversation_key})
     
     if conversation_object:    
         conversation = conversation_object["conversation"]
         conversation_json_list = []
-    
-        for key in sorted(conversation.keys()):
-            speaker = conversation[key]["speaker"]
-            text = conversation[key]['text']
+        
+        for key in conversation:
+            speaker = key["speaker"]
+            text = key['text']
             conversation_json_list.append({"speaker" : speaker, "text" : text})
             
         return json.dumps(conversation_json_list)
     return {"Error" : "No conversation found for those users!"}
 
 def push_message_to_database(speaker:str, receiver:str, message:str):
-    """Function that will enter a new conversation in the database in none exists. If it does exist it will update the conversation
-    with the newest message."""
+    """Add a new message to a direct message conversation in the database, or update an existing conversation
+    with the newest message. If the speaker and receiver are the same, raise a KeyError with a custom error message.
+
+    Args:
+        speaker (str): The username of the person sending the message.
+        receiver (str): The username of the person receiving the message.
+        message (str): The text of the message.
+
+    Returns:
+        A dictionary containing an "Error" key and message value if the speaker and receiver are the same, or None otherwise.
+
+    Raises:
+        KeyError: If the speaker and receiver are the same.
+        DuplicateKeyError: If there is a duplicate key in the database.
+        InvalidDocument: If the document is not valid for insertion.
+        ConnectionFailure: If the database connection failed.
+        PyMongoError: For any other PyMongo-related error.
+    """
+    try:
+        if speaker == receiver:
+            raise KeyError("No DM to yourself possible!")
+    except KeyError as e:
+        print(e)
+        return {"Error" : "No DM to yourself possible!"} 
     generated_database_key_hash = generate_database_key_hash(speaker, receiver)
     
-    order_number = get_message_status(generated_database_key_hash)
+    order_number = get_message_status(generated_database_key_hash)[-1]["order_number"]
+    
     if order_number:
-        int_order_number = int(order_number)
-        int_order_number += 1
+        order_number+=1
         update = {
             "$push": {
-                "conversation": [
+                "conversation": 
                     {
-                        str(order_number): {
-                        "speaker": speaker,
-                        "text": message,
-                        "date_time": str(datetime.datetime.utcnow())
-                }}
-                ] 
+                    "order_number": order_number, 
+                    "speaker": speaker,
+                    "text": message,
+                    "date_time": str(datetime.datetime.utcnow())
+                }
+                 
             }
         }
         try:
@@ -140,12 +166,12 @@ def push_message_to_database(speaker:str, receiver:str, message:str):
     
         update = {
             "key": generated_database_key_hash,
-            "conversation": [
-                {str(order_number): {
+            "conversation": [{
+                    "order_number": 1, 
                     "speaker": speaker,
                     "text": message,
                     "date_time": str(datetime.datetime.utcnow())
-                }
+                
             }]
         }
         try:
