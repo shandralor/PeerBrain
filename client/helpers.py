@@ -1,4 +1,4 @@
-#---WELCOME SCREEN---#
+# ---WELCOME SCREEN---#
 
 welcome_label_helper = """
 MDLabel: 
@@ -53,9 +53,9 @@ MDFloatingActionButton:
     icon: "close-circle"
     pos_hint: {"center_x" : 0.5,"center_y":0.15}
     on_release : app.close_app()
-""" 
+"""
 
-#---LOGIN SCREEN---#
+# ---LOGIN SCREEN---#
 
 username_helper = """
 MDTextField:
@@ -95,7 +95,7 @@ MDRectangleFlatButton:
     pos_hint: {"center_x" : 0.5,"center_y":0.2}
     
 """
-#---CREATE USER---#
+# ---CREATE USER---#
 new_username_helper = """
 MDTextField:
     hint_text: "Enter username"
@@ -138,7 +138,7 @@ MDRectangleFlatButton:
     text: "Back" 
     pos_hint: {"center_x" : 0.5,"center_y":0.2}
     """
-#---CHANGE SERVER DIALOG---#
+# ---CHANGE SERVER DIALOG---#
 
 change_server_confirmation_button_helper = """
 MDRectangleFlatButton: 
@@ -157,7 +157,7 @@ MDTextField:
     hint_text: "Enter new server"
 """
 
-#---MAIN MENU SCREEN---#
+# ---MAIN MENU SCREEN---#
 
 main_menu_label_helper = """
 MDLabel: 
@@ -190,7 +190,7 @@ MDRectangleFlatButton:
 """
 
 
-#---TECHNICAL MENU SCREEN---#
+# ---TECHNICAL MENU SCREEN---#
 
 technical_menu_label_helper = """
 MDLabel: 
