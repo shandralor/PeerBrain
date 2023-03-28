@@ -1,30 +1,33 @@
-"""This file will contain all the FastAPI logic for our server module. It will leverage the db.py 
-and models.py files to supply its functionality."""
-
+import html
 import logging
 import os
+import sys
 from datetime import datetime, timedelta
 from typing import List, Optional, Union
 from uuid import UUID, uuid4
-import bcrypt
-from passlib.context import CryptContext
-from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Path, Query, status, Form
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse
-from jose import JWTError, jwt
-import html
 
-#---LOCAL IMPORTS---#
-from models import KeyStore, PubKey, SymKeyRequest, Thought, Token, TokenData, User, UserInDB, PasswordResetUser, \
-    MessageObject
-from db import add_friend, change_password, create_thought, create_user, \
-    gen_pw_hash, get_encrypted_sym_key, get_friends_by_username, \
-         get_thoughts, get_user_by_email, \
-            get_user_by_username, get_users, send_keys_to_remote_server, \
-                confirm_registration_token, create_password_reset_token, get_password_token,remove_friend, \
-                    update_thought_rating, get_conversation, push_message_to_database
-                
+import bcrypt
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, Form, HTTPException, Path, Query, status
+from fastapi.responses import HTMLResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+sys.path.append('./db_code')
+sys.path.append('./email_code')
+
+import db_pw_reset, db_users, db_dm, db_friends, db_keys, db_thoughts
+from models import (KeyStore, 
+                    PubKey, 
+                    SymKeyRequest, 
+                    Thought, 
+                    Token, 
+                    TokenData, 
+                    User, 
+                    UserInDB, 
+                    PasswordResetUser, 
+                    MessageObject)
 
 #---LOAD ENV VARS---#
 load_dotenv()
@@ -40,32 +43,8 @@ RESET_PASSWORD_ROUTE = os.environ.get("RESET_PASSWORD_ROUTE")
 #---APP INIT---#
 app = FastAPI()
 
-#---LOG AND DEBUG---#
-def print_and_log(message:str, username:str)->None:
-    """
-    Function to log a message with a username to a log file and print it to the console.
-    
-    Parameters:
-    - message (str): The message to be logged and printed.
-    - username (str): The username to be included in the log message.
-    
-    Returns:
-    - None
-    
-    Side Effects:
-    - Logs the message to a file named endpoint_log.txt.
-    - Prints the log message to the console.
-    """
-    
-    logging.basicConfig(filename='endpoint_log.txt', level=logging.INFO)
-    current_datetime = datetime.utcnow()
-    formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
-    log_message = f"{formatted_datetime} - {username} : {message}"
-    print(log_message)
-    logging.info(log_message)
-
 #---DB INIT FROM DB MODULE---#
-db = get_users()
+db = db_users.get_users()
 
 #---CONNECTION SECURITY FUNCTIONS---#
 def verify_password(plain_text_pw:str, hash_pw:str)->bool:
@@ -94,12 +73,13 @@ def get_user(db: dict, username: str) -> Union[UserInDB, None]:
     - UserInDB: A `UserInDB` object containing the user's data if the user is found in the database.
       Returns `None` if the user is not found in the database.
     """
-    db = get_users()
+    db = db_users.get_users()
     if username in db:
         #username below needs to become keys if the database object for user gets changed
         user_data = db[username]
+        
         return UserInDB(**user_data)
-
+    
 def authenticate_user(db:dict, username:str, password:str)->Union[bool, dict]:
     """
     Authenticates a user based on a username and password.
@@ -116,14 +96,14 @@ def authenticate_user(db:dict, username:str, password:str)->Union[bool, dict]:
     Side Effects:
     - None.
     """
-    db = get_users()
+    db = db_users.get_users()
     user = get_user(db, username)
     if not user:
         return False
     if not verify_password(password, user.hashed_pw):
         return False
     return user
-
+  
 def create_access_token(data:dict, expires_delta:timedelta or None = None)->str:
     """
     Function that generates a JWT access token with an optional expiration time.
@@ -146,7 +126,7 @@ def create_access_token(data:dict, expires_delta:timedelta or None = None)->str:
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm = ALGORITHM)
     return encoded_jwt
-
+  
 async def get_current_user(token : str = Depends(oauth_2_scheme)):
     """
     Async function that returns the current authenticated user.
@@ -162,15 +142,14 @@ async def get_current_user(token : str = Depends(oauth_2_scheme)):
     Raises:
     - HTTPException: Raised if the token cannot be validated or the user cannot be found.
     """
-    db = get_users()
+    db = db_users.get_users()
     
     credential_exception = HTTPException(
         status_code = status.HTTP_401_UNAUTHORIZED, 
         detail= "Could not validate credentials",
         headers={"WWW-Authenticate":"Bearer"}
         )
-    
-  
+      
     try:
         payload = jwt.decode(token, SECRET_KEY,algorithms=[ALGORITHM])
         username = payload.get("sub")
@@ -186,10 +165,8 @@ async def get_current_user(token : str = Depends(oauth_2_scheme)):
     if user is None:
         raise credential_exception
     
-      
     return user
-
-#---optional to check if user status is disabled---#
+  
 async def get_current_active_user(current_user: UserInDB = Depends(get_current_user)):
     """
     Async function that returns the current authenticated user if they are active.
@@ -209,7 +186,7 @@ async def get_current_active_user(current_user: UserInDB = Depends(get_current_u
         raise HTTPException(status_code=400, detail = "Inactive user!")
     return current_user
 
-#---ENDPOINTS---#
+#---PUBLIC ENDPOINTS---#
 
 #Root route to get token
 @app.post("/", response_model=Token)
@@ -228,7 +205,7 @@ async def login_for_access_token(form_data : OAuth2PasswordRequestForm = Depends
     Side Effects:
     - Logs a message to a log file using the 'print_and_log()' function.
     """
-    db = get_users()
+    db = db_users.get_users()
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= "Username/password incorrect!",
@@ -238,13 +215,10 @@ async def login_for_access_token(form_data : OAuth2PasswordRequestForm = Depends
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= "Account inactive!",
                                          headers={"WWW-Authenticate":"Bearer"})
         
-    
-   
     access_token_expires = timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub" : user.username}, expires_delta=access_token_expires)
-    print_and_log("logged in", user.username)
     return {"access_token" : access_token, "token_type" : "bearer"}
-
+  
 @app.post("/api/v1/users")
 async def register_user(user : User):
     """
@@ -261,27 +235,26 @@ async def register_user(user : User):
     - Logs a message to a file indicating that the user account was created.
     """
     
-    username  = user.username
+    username = user.username
     email = user.email
     user_password = user.user_password
     
-    print(get_user_by_email(email))
-    print(get_user_by_username(username))
-    # if get_user_by_email(email) or get_user_by_username(username):
-    #     raise HTTPException(status_code=400, detail="A user with that username/email already exists.")
-    create_user(username, email, user_password)
-    print_and_log("User account created", username)
-    return {"Account creation" : "Successful"}
-
+    print(db_users.get_user_by_email(email))
+    print(db_users.get_user_by_username(username))
+    if db_users.get_user_by_email(email)== {'Email': 'No user with email found'} and db_users.get_user_by_username(username)=={'Username': 'No user with username found'}:
+      db_users.create_user(username, email, user_password)
+      return {"Account creation" : "Successful"}
+    else:
+      raise HTTPException(status_code=400, detail="A user with that username/email already exists.")
+    
 @app.get("/confirm-email")
 async def confirm_email(token: str, username: str):
     """User endpoint that wil handle user verification after the account gets created. If will verify the confirmation token."""
-    user = get_user_by_username(username)
-    user_key = user["key"]
+    user =db_users.get_user_by_username(username)
     user_confirm_token = user["confirmation_token"]
     
     if token == user_confirm_token:
-        confirm_registration_token(user_key)
+        db_users.confirm_registration_token(username)
         html_content = f"""<!DOCTYPE html>
             <html lang="en">
 
@@ -393,37 +366,35 @@ async def confirm_email(token: str, username: str):
             </body>
             </html>"""
         return HTMLResponse(content=html_content, status_code=200) 
-        
 
 @app.post("/get_password_reset_token")
 async def get_password_reset_token(user : PasswordResetUser):    
     username  = user.username
     
-    user_object = get_user_by_username(username)
-    
-        
+    user_object = db_users.get_user_by_username(username)
+            
     if user_object == {'Username': 'No user with username found'}:
         raise HTTPException(status_code=400, detail="No user for that username!")
     else:
-        if get_password_token(username):
+        if db_pw_reset.get_password_token(username):
             """As the database operation called is a put, it will overwrite the previous token, 
             thus making sure that only one password reset token can exist at any given time."""
             
             print("Reset token already found, deleting previous token!")
         email = user_object["email"]
-        create_password_reset_token(username, email)
+        db_pw_reset.create_password_reset_token(username, email)
         #Added return to notify user that the email got sent out!
         return {"Password Reset Email Sent Successfully!" : f"Email sent to {email}"}
-    
+      
 @app.get(f"/{RESET_PASSWORD_ROUTE}/reset-password")  
 async def reset_user_password(username:str, token:str):
     """Returns endpoint that will render an html form where you can enter your new password and confirm password. This data will get
     html sanitized and then send to the post endpoint to trigger the function or not."""
-    password_token_object = get_password_token(username)
+    password_token_object = db_pw_reset.get_password_token(username)
     
     if password_token_object and password_token_object["reset_token"] == token:
         print("Matching password reset token found!")
-        
+        db_pw_reset.delete_password_token(username)
         html_content = f"""
         <html>
             <head>
@@ -486,36 +457,72 @@ async def reset_user_password(username:str, token:str):
         
     else:
         raise HTTPException(status_code=400, detail="Invalid/expired password reset token!")
-    
+      
 @app.post(f"/{RESET_PASSWORD_ROUTE}/submit")
 async def submit_form(new_password: str = Form(...), confirm_password: str = Form(...), token: str = Form(...), username:str = Form(...)):
     """Post function that will trigger the reset password function if the new password and confirm password match"""
     if new_password != confirm_password:
         raise HTTPException(status_code=400, detail="Passwords did not match!")
     else:               
-        return change_password(username, new_password)
+        db_users.change_password(username, new_password)
+        html_content = f"""<!DOCTYPE html>
+            <html lang="en">
 
+            <head>
+                
+                <meta charset="utf-8">
+                <title>PeerBrain</title>
+                <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
+                <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+                <link rel="stylesheet" href="https://andrewstech.github.io/public/peer-brain/style.css">
+
+                
+
+            </head>
+
+            <body>
+                
+                
+                <div class="auth-wrapper">
+                    <div class="auth-content">
+                        <div class="auth-bg">
+                            <span class="r"></span>
+                            <span class="r s"></span>
+                            <span class="r s"></span>
+                            <span class="r"></span>
+                        </div>
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
+                                <div>
+                                    <hr>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>Password changed successfully!</a></p>
+                                    <p class="mt-2 text-muted disabled"><a href="" disabled>You can now login with your new password!!</a></p>
+                                    <hr>
+                                </div>
+
+                                <br />
+                                <br />
+
+                                
+
+                                <a class="fa fa-github" style="font-size:24px" href="https://github.com/shandralor/PeerBrain"></a>
+                                <br />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 </body>
+            </html>"""
+        return HTMLResponse(content=html_content, status_code=200)     
+      
 #---AUTH ENDPOINTS---#
 
-@app.get("/api/v1/users")
-async def get_all_users(current_user : User = Depends(get_current_active_user)):
-    """
-    Async function that gets all users from the database.
-    Requires an authenticated user with active status.
-    
-    Parameters:
-    - current_user (User, optional): The current authenticated user. Defaults to Depends(get_current_active_user).
-    
-    Returns:
-    - List[User]: A list of all user objects in the database.
-    
-    Raises:
-    - HTTPException: Raised if the current user is not authenticated or is not active.
-    """
-    
-    return get_users()
-
+#USER#
 @app.get("/api/v1/token-test")
 async def token_test(current_user : User = Depends(get_current_active_user)):
     """
@@ -533,147 +540,8 @@ async def token_test(current_user : User = Depends(get_current_active_user)):
     - HTTPException: Raised if the token cannot be validated or the user is not active.
     """
     
-    print_and_log("requested token and logged in", current_user.username)
+    # print_and_log("requested token and logged in", current_user.username)
     return {"Token Validity": "Verified"}
-
-@app.get("/api/v1/thoughts/{username}")
-async def get_thoughts_for_user( username: str, current_user : User = Depends(get_current_active_user)):
-    """
-    Async function that returns a list of thoughts for the specified user.
-    If authentication fails, it raises an HTTPException with a 401 Unauthorized status code.
-    
-    Parameters:
-    - username (str): The username of the user to retrieve thoughts for.
-    - current_user (User, optional): The currently authenticated user object. Defaults to Depends(get_current_active_user).
-    
-    Returns:
-    - List[Thought]: A list of Thought objects for the specified user.
-    
-    Raises:
-    - HTTPException: Raised if the authentication fails.
-    """
-    
-    return get_thoughts(username)
-
-@app.get("/api/v1/thoughts/{query_str}")
-async def get_thought(query_str : str, current_user : User = Depends(get_current_active_user)):
-    """
-    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
-    or a list of thoughts that match partially with the query string.
-    
-    Parameters:
-    - query_str (str): The query string to use to retrieve thoughts.
-    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
-    retrieve the user. Defaults to None.
-    
-    Returns:
-    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
-    
-    Raises:
-    - HTTPException: Raised if the user is not authenticated.
-    """
-    return get_thought(query_str)
-
-@app.get("/api/v1/update-thought-rating")
-async def update_thoughts_rating(key : str, current_user : User = Depends(get_current_active_user)):
-    """
-    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
-    or a list of thoughts that match partially with the query string.
-    
-    Parameters:
-    - query_str (str): The query string to use to retrieve thoughts.
-    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
-    retrieve the user. Defaults to None.
-    
-    Returns:
-    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
-    
-    Raises:
-    - HTTPException: Raised if the user is not authenticated.
-    """
-    return update_thought_rating(key)
-
-@app.get("/api/v1/friends")
-async def get_friends( current_user : User = Depends(get_current_active_user)):
-    """
-    FastAPI endpoint that returns a list of friends for the current authenticated user.
-    Uses the get_current_active_user dependency to check that the user is authenticated.
-    
-    Parameters:
-    - current_user (User, optional): The current authenticated user. Defaults to Depends(get_current_active_user).
-    
-    Returns:
-    - List[Friend]: A list of friends for the current user.
-    
-    Raises:
-    - HTTPException: Raised if the user is not authenticated.
-    """
-    
-    return get_friends_by_username(current_user.username)
-
-@app.post("/api/v1/friends/{friend_username}")
-async def add_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
-    """
-    Async function that adds a friend to the current user's friend list.
-    
-    Parameters:
-    - friend_username (str): The username of the friend to be added.
-    - current_user (User): The currently authenticated user.
-    
-    Returns:
-    - Dict[str, Any]: A dictionary with a message indicating that the friend was added.
-    
-    Raises:
-    - HTTPException: Raised if the friend could not be added.
-    """
-    
-    print_and_log("added a friend", current_user.username)
-    return add_friend(current_user.username, friend_username)
-
-@app.get("/api/v1/remove-friend")
-async def remove_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
-    """
-    Async function that removes a friend from the current user's friend list.
-    
-    Parameters:
-    - friend_username (str): The username of the friend to be added.
-    - current_user (User): The currently authenticated user.
-    
-    Returns:
-    - Dict[str, Any]: A dictionary with a message indicating that the friend was removed.
-    
-    Raises:
-    - HTTPException: Raised if the friend could not be added.
-    """
-    
-    remove_friend_object = remove_friend(current_user.username, friend_username)
-    if remove_friend_object == {"Username" : "Not Found"}:
-        raise HTTPException(status_code=400, detail="No friend for that username!")
-    elif remove_friend_object == {"Username" : "You can't remove yourself as your friend!"}:
-        raise HTTPException(status_code=400, detail="You can't remove yourself as your friend!")
-    else:
-        print_and_log(f"removed friend {friend_username}", current_user.username)
-        return
-    
-@app.post("/api/v1/thoughts")
-async def create_new_thought(thought : Thought, current_user : User = Depends(get_current_active_user)):
-    """
-    Endpoint to create a new thought.
-    
-    Parameters:
-    - thought (Thought): The thought to be created, passed as a Pydantic model.
-    - current_user (User): The currently authenticated user, passed as a Pydantic model, with the help of the `get_current_active_user` dependency.
-    
-    Returns:
-    - A dictionary with a single key-value pair, where the key is "Thought" and the value is "Successfully created!".
-    """
-    username = thought.username
-    title = thought.title
-    content = thought.content
-    
-    create_thought(username, title, content)
-    
-    return {"Thought" : "Successfully created!"}
 
 @app.get("/api/v1/me", response_model=User)
 async def read_users_me(current_user : User = Depends(get_current_active_user)):
@@ -691,33 +559,80 @@ async def read_users_me(current_user : User = Depends(get_current_active_user)):
     - HTTPException: Raised if the user cannot be found or is not active.
     """
     
-    print_and_log("consulted his user details", current_user.username)
     return current_user
 
-@app.get("/api/v1/dm-conversation")
-async def get_users_conversation(friend_username:str,current_user : User = Depends(get_current_active_user)):
+#FRIENDS#
+@app.get("/api/v1/friends")
+async def get_friends( current_user : User = Depends(get_current_active_user)):
     """
+    FastAPI endpoint that returns a list of friends for the current authenticated user.
+    Uses the get_current_active_user dependency to check that the user is authenticated.
+    
+    Parameters:
+    - current_user (User, optional): The current authenticated user. Defaults to Depends(get_current_active_user).
+    
+    Returns:
+    - List[Friend]: A list of friends for the current user.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
     """
     
-    #print_and_log("requested private conversation data", current_user.username)
-    conversation_data =  get_conversation(current_user.username,friend_username)
-    
-    return conversation_data
+    return db_friends.get_friends_by_username(current_user.username)
 
-@app.post("/api/v1/dm-conversation")
-async def post_conversation(message_object : MessageObject,  current_user : User = Depends(get_current_active_user)):
+@app.post("/api/v1/friends/{friend_username}")
+async def add_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
     """
+    Async function that adds a friend to the current user's friend list.
+    
+    Parameters:
+    - friend_username (str): The username of the friend to be added.
+    - current_user (User): The currently authenticated user.
+    
+    Returns:
+    - Dict[str, Any]: A dictionary with a message indicating that the friend was added.
+    
+    Raises:
+    - HTTPException: Raised if the friend could not be added.
     """
     
-    friend_username = message_object.friend_username
-    message = message_object.message
-    username = current_user.username
-        
-    if push_message_to_database(username, friend_username, message):
-        print_and_log("Createad a DM", current_user.username)
-        return {"Message" : "Uploaded successfully"}
-    return
+    add_friend_object = db_friends.add_friend(current_user.username, friend_username)
+    if add_friend_object == {"Friend username" : "Not Found"}:
+      raise HTTPException(status_code=400, detail="No friend for that username!")
+    elif add_friend_object == {"Friend username" : "You can't add yourself as your friend!"}:
+      raise HTTPException(status_code=400, detail="You can't add yourself as your friend!")
+    elif add_friend_object == {"Friend username" : "Already a friend!"}:
+      raise HTTPException(status_code=400, detail="User is already a friend!")
+    else:
+        return
+      
+@app.get("/api/v1/remove-friend")
+async def remove_friends( friend_username: str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function that removes a friend from the current user's friend list.
+    
+    Parameters:
+    - friend_username (str): The username of the friend to be added.
+    - current_user (User): The currently authenticated user.
+    
+    Returns:
+    - Dict[str, Any]: A dictionary with a message indicating that the friend was removed.
+    
+    Raises:
+    - HTTPException: Raised if the friend could not be added.
+    """
+    
+    remove_friend_object = db_friends.remove_friend(current_user.username, friend_username)
+    if remove_friend_object == {"Friend username" : "Not Found"}:
+      raise HTTPException(status_code=400, detail="No friend for that username!")
+    elif remove_friend_object == {"Friend username" : "You can't remove yourself as your friend!"}:
+      raise HTTPException(status_code=400, detail="You can't remove yourself as your friend!")
+    elif remove_friend_object == {"Friend username" : "Not in your friend list!"}:
+      raise HTTPException(status_code=400, detail="That user is not in your friend list!")
+    else:
+        return
 
+#KEYS#
 @app.post("/api/v1/post_key_store")
 async def post_keystore_user(keystore : KeyStore,  current_user : User = Depends(get_current_active_user)):
     """
@@ -738,11 +653,10 @@ async def post_keystore_user(keystore : KeyStore,  current_user : User = Depends
     public_key = keystore.pub_key
     symmetric_key = keystore.symmetric_key
     username = current_user.username
-    hashed_password = get_user_by_username(username)["hashed_pw"]
+    hashed_password = db_users.get_user_by_username(username)["hashed_pw"]
     
-    send_keys_to_remote_server(public_key, symmetric_key, username, hashed_password)
+    db_keys.send_keys_to_remote_server(public_key, symmetric_key, username, hashed_password)
     
-    print_and_log("uploaded his/her public and symmetric key", current_user.username)
     return {"PUBLIC KEY" : "UPLOADED"}
 
 @app.post("/api/v1/user_key_request")
@@ -764,9 +678,132 @@ async def get_user_key_store(sym_key_req : SymKeyRequest, current_user : User = 
     friend_username = sym_key_req.friend_username
     
         
-    if friend_username in get_friends_by_username(username).keys():
-        return get_encrypted_sym_key(username, password, friend_username)
+    if friend_username in db_friends.get_friends_by_username(username).keys():
+        return db_keys.get_encrypted_sym_key(username, password, friend_username)
     else:
         return {"Message" : "Error in getting the encrypted key"}
 
+#THOUGHTS#
+@app.post("/api/v1/thoughts")
+async def create_new_thought(thought : Thought, current_user : User = Depends(get_current_active_user)):
+    """
+    Endpoint to create a new thought.
+    
+    Parameters:
+    - thought (Thought): The thought to be created, passed as a Pydantic model.
+    - current_user (User): The currently authenticated user, passed as a Pydantic model, with the help of the `get_current_active_user` dependency.
+    
+    Returns:
+    - A dictionary with a single key-value pair, where the key is "Thought" and the value is "Successfully created!".
+    """
+    username = thought.username
+    title = thought.title
+    content = thought.content
+    
+    db_thoughts.create_thought(username, title, content)
+    
+    return {"Thought" : "Successfully created!"}
+
+@app.get("/api/v1/thoughts/{username}")
+async def get_thoughts_for_user( username: str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function that returns a list of thoughts for the specified user.
+    If authentication fails, it raises an HTTPException with a 401 Unauthorized status code.
+    
+    Parameters:
+    - username (str): The username of the user to retrieve thoughts for.
+    - current_user (User, optional): The currently authenticated user object. Defaults to Depends(get_current_active_user).
+    
+    Returns:
+    - List[Thought]: A list of Thought objects for the specified user.
+    
+    Raises:
+    - HTTPException: Raised if the authentication fails.
+    """
+    
+    return db_thoughts.get_thoughts(username)
+  
+@app.get("/api/v1/update-thought-rating")
+async def update_thoughts_rating(key : str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
+    or a list of thoughts that match partially with the query string.
+    
+    Parameters:
+    - query_str (str): The query string to use to retrieve thoughts.
+    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
+    retrieve the user. Defaults to None.
+    
+    Returns:
+    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    return db_thoughts.update_thought_rating(key)
+
+#function below not working yet, need to check why
+@app.get("/api/v1/thoughts/{query_str}")
+async def get_thought_by_query(query_str : str, current_user : User = Depends(get_current_active_user)):
+    """
+    Async function to retrieve thoughts based on a query string. Returns a single thought if it matches exactly, 
+    or a list of thoughts that match partially with the query string.
+    
+    Parameters:
+    - query_str (str): The query string to use to retrieve thoughts.
+    - current_user (User, optional): The authenticated user object. Uses the `get_current_active_user` function to
+    retrieve the user. Defaults to None.
+    
+    Returns:
+    - Union[Thought, List[Thought]]: Returns a single Thought object or a list of Thought objects.
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    return db_thoughts.get_thought(query_str)
+  
+#DMS#
+@app.get("/api/v1/dm-conversation")
+async def get_users_conversation(friend_username:str,current_user : User = Depends(get_current_active_user)):
+    """
+    Fetches a private conversation between the current user and a friend by their username.
+    
+    :params: 
+        friend_username: The username of the friend whose conversation to fetch.
+        current_user: The current authenticated user, retrieved via the `get_current_active_user` dependency.
+    
+    :return: 
+        The conversation data between the two users.
+    
+    """
+    
+    #print_and_log("requested private conversation data", current_user.username)
+    conversation_data =  db_dm.get_conversation(current_user.username,friend_username)
+    
+    return conversation_data
+
+@app.post("/api/v1/dm-conversation")
+async def post_conversation(message_object : MessageObject,  current_user : User = Depends(get_current_active_user)):
+    """
+    Uploads a message to a conversation between the current user and a friend.
+
+    Arguments:
+        - message_object: a MessageObject instance containing the message and the friend's username.
+        - current_user: a User instance representing the current authenticated user.
+
+    Returns:
+        - A dictionary with a "Message" key and a corresponding value indicating whether the message was uploaded successfully, or
+        - An error message if the message could not be uploaded.
+    """
+    
+    friend_username = message_object.friend_username
+    message = message_object.message
+    username = current_user.username
+        
+    message_status = db_dm.push_message_to_database(username, friend_username, message)
+    if message_status is None:   
+        return {"Message" : "Uploaded successfully"}
+    else:
+        return message_status
+    return
 
