@@ -4,23 +4,23 @@ import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-#---LOAD ENV VARS---#
+# ---LOAD ENV VARS---#
 load_dotenv()
 
-#---MAIL VARS---#
+# ---MAIL VARS---#
 SMTP_SERVER = "send.one.com"
 SMTP_PORT = 465
 SENDER = os.environ.get("EMAIL_SENDER")
 PASSWORD = os.environ.get("EMAIL_PASS")
-url = 'https://peerbrain.teckhawk.be/'
-#url = 'http://127.0.0.1:8000/'
-account_creation_link_text = 'CONFIRM ACCOUNT'
-reset_password_link_text = 'RESET PASSWORD'
+url = "https://peerbrain.teckhawk.be/"
+# url = 'http://127.0.0.1:8000/'
+account_creation_link_text = "CONFIRM ACCOUNT"
+reset_password_link_text = "RESET PASSWORD"
 RESET_PASSWORD_ROUTE = os.environ.get("RESET_PASSWORD_ROUTE")
 
-#---FUNCTIONS---#
-def confirmation_mail(receiver:str, username:str, token:str):
-        
+# ---FUNCTIONS---#
+def confirmation_mail(receiver: str, username: str, token: str):
+
     message = MIMEMultipart("alternative")
     message["Subject"] = f"Confirm your email for your Peerbrain account"
     message["From"] = SENDER
@@ -67,16 +67,15 @@ def confirmation_mail(receiver:str, username:str, token:str):
 
     # Create secure connection with server and send email
     context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT , context=context) as server:
+    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
         server.login(SENDER, PASSWORD)
-        server.sendmail(
-            SENDER, receiver, message.as_string()
-        )
-    
+        server.sendmail(SENDER, receiver, message.as_string())
+
     print(f"Account creation mail sent to {receiver}")
 
-def password_reset_mail(receiver:str, username:str, token:str):
-        
+
+def password_reset_mail(receiver: str, username: str, token: str):
+
     message = MIMEMultipart("alternative")
     message["Subject"] = f"Reset the password for your Peerbrain account"
     message["From"] = SENDER
@@ -130,10 +129,8 @@ def password_reset_mail(receiver:str, username:str, token:str):
 
     # Create secure connection with server and send email
     context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT , context=context) as server:
+    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
         server.login(SENDER, PASSWORD)
-        server.sendmail(
-            SENDER, receiver, message.as_string()
-        )
-    
+        server.sendmail(SENDER, receiver, message.as_string())
+
     print(f"Password reset mail sent to {receiver}")
