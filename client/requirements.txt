@@ -1,4 +1,5 @@
 cryptography==3.4.8
+fastapi==0.95.0
 Kivy==2.1.0
 kivymd==1.1.1
 passlib==1.7.4
