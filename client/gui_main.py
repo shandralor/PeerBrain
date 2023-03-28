@@ -43,7 +43,7 @@ from helpers import (
 from client_functions import check_token, login, log_out
 
 
-class PeerbrainApp(MDApp):
+class PeerBrainApp(MDApp):
 
     server_url = StringProperty("https://peerbrain.teckhawk.be/")
     # server_url = StringProperty('http://127.0.0.1:8000/')
@@ -250,7 +250,7 @@ class PeerbrainApp(MDApp):
         self.dialog.dismiss()
 
 
-PeerbrainApp().run()
+PeerBrainApp().run()
 
 
 # Choosing custom colors is rgb values / 255 for each value

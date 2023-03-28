@@ -2,7 +2,7 @@
 
 welcome_label_helper = """
 MDLabel: 
-    text: "Welcome to the alpha version of the Peerbrain application!"
+    text: "Welcome to the alpha version of the PeerBrain application!"
     pos_hint: {"center_x" : 0.7,"center_y":0.9}                        
     theme_text_color: "Custom"
     text_color: (0,1,0, 1)

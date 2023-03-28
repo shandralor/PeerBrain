@@ -22,7 +22,7 @@ RESET_PASSWORD_ROUTE = os.environ.get("RESET_PASSWORD_ROUTE")
 def confirmation_mail(receiver: str, username: str, token: str):
 
     message = MIMEMultipart("alternative")
-    message["Subject"] = f"Confirm your email for your Peerbrain account"
+    message["Subject"] = f"Confirm your email for your PeerBrain account"
     message["From"] = SENDER
     message["To"] = receiver
 
@@ -36,7 +36,7 @@ def confirmation_mail(receiver: str, username: str, token: str):
         
     Sincerely,
     
-    Team Peerbrain
+    Team PeerBrain
     """
     html = f"""\
     <html>
@@ -50,7 +50,7 @@ def confirmation_mail(receiver: str, username: str, token: str):
         <br>  <br> 
         Sincerely,<br>
         <br>
-        Team Peerbrain
+        Team PeerBrain
         </p>
     </body>
     </html>
@@ -77,7 +77,7 @@ def confirmation_mail(receiver: str, username: str, token: str):
 def password_reset_mail(receiver: str, username: str, token: str):
 
     message = MIMEMultipart("alternative")
-    message["Subject"] = f"Reset the password for your Peerbrain account"
+    message["Subject"] = f"Reset the password for your PeerBrain account"
     message["From"] = SENDER
     message["To"] = receiver
 
@@ -94,7 +94,7 @@ def password_reset_mail(receiver: str, username: str, token: str):
     \n    
     Sincerely,
     
-    Team Peerbrain
+    Team PeerBrain
     """
     html = f"""\
     <html>
@@ -112,7 +112,7 @@ def password_reset_mail(receiver: str, username: str, token: str):
         <br>
         Sincerely,<br>
         <br>
-        Team Peerbrain
+        Team PeerBrain
         </p>
     </body>
     </html>

@@ -409,7 +409,7 @@ async def reset_user_password(username: str, token: str):
                             </div>
                             <br />
                             <br />
-                            <p class="mb-0 text-muted"> <a href="https://github.com/shandralor/PeerBrain" >GitHub</a></p>
+                            <p class="mb-0 text-muted"> <a href="https://github.com/shandralor/PeerBrain">GitHub</a></p>
                             <br />
                         </div>
                     </div>
