@@ -35,13 +35,14 @@ def main():
 
     print()
     print("Welcome to version 0.2 of the Brainwaves P2P client!")
+    print()
     print("-------------------------------------------------------------------")
-    print(f"The currently set server url is {server_url}")
+    print(f"Current Server: {server_url}")
     print("-------------------------------------------------------------------")
     print()
-    print("Please select what you want to do from the menu below.")
+    print("Please select an option from the menu below.")
 
-    #MENU SHOWING WHILE WE ARE NOT LOGGED IN OR AUTHENTICATED WITH TOKEN
+    # Non-authenticated Menu
     if not authenticated:
         while authenticated == False:
             print("1. Log in to the current server")
@@ -59,9 +60,9 @@ def main():
                     elif login_with_token(server_url):
                         authenticated = True
                     else:
-                        print("---")
-                        print("Inactive user!")
-                        print("---")
+                        print()
+                        print("ERROR: Inactive user")
+                        print()
                 except KeyError:
                     print("---")
                     print("Username/Password incorrect")
@@ -81,7 +82,7 @@ def main():
                     print("Passwords do not match!")
                 print()    
             elif choice == "3":
-                server_url = input("Please enter a new url: ")
+                server_url = input("Enter the new server URL: ")
             elif choice == "4":
                 print()
                 password_reset_username = input("Please enter your username: ")
@@ -93,10 +94,10 @@ def main():
             else:
                 print("Invalid choice")    
                 
-    #MENU SHOWING WHILE WE LOGGED IN OR AUTHENTICATED WITH TOKEN       
+    # Authenticated Menu
     if authenticated:        
         while True:
-            username, email = get_account_info(server_url)#---Making current users username and email available to authenticated user
+            username, email = get_account_info(server_url) # Making current users username and email available to authenticated user
             friends = get_user_friends(server_url)
             
             print("\nMAIN MENU:")
@@ -132,7 +133,7 @@ def main():
                     if sub_choice == "1":
                         if detect_private_key() and detect_sym_key() and detect_public_key():
                             print()
-                            print("Keys already exist, overwriting them will make your account irretrievable!!")
+                            print("Keys already exist, overwriting them will make your account irretrievable!")
                             print()
                             print("Key creation canceled!")
                         else:    
@@ -156,20 +157,20 @@ def main():
                     print()
                     print("\nPlease choose an option:")
                     print()
-                    print("1. Check your account details")
+                    print("1. View your account details")
                     print("--------------------------------")
                     print("2. Create a message")
                     print("3. Show all messages from a friend")
                     print("--------------------------------")
                     print("4. Add a friend")
-                    print("5. Check friends list")
+                    print("5. View friends list")
                     print("--------------------------------")
                     print("B to return to main menu")
                     
                     sub_choice = input(">> ")
                     
                     if sub_choice == "1":
-                        print("---YOUR ACCOUNT DETAILS---")
+                        print("---YOUR ACCOUNT---")
                         print()
                         print(f"Username : {username}")
                         print(f"Email : {email}")
@@ -178,8 +179,8 @@ def main():
                         print()
                         print(f"POSTING AS >>  {username}")
                         print()
-                        title = input("Please choose a title for your Thought: \n\n>>TITLE: ")                        
-                        message = input("What would you like to post? : \n\nMESSAGE>>: ")
+                        title = input("Please choose a title for your thought: \n\n>>TITLE: ")                        
+                        message = input("What would you like to post? \n\nMESSAGE>>: ")
                         sym_key, enc_mess = encrypt_message_symmetrical(message)
                         print()
                         
@@ -195,7 +196,7 @@ def main():
                         friend_username = ''
                         #error handling of faulty passwords
                         while type(base_64_encr_sym_key) != str or friend_username == None:
-                            user_password = getpass.getpass(prompt ="Please confirm your password to get your messages:  \n\n")
+                            user_password = getpass.getpass(prompt ="Please confirm your password to get your messages: \n\n")
                             friend_username = input("Please enter the username of the friend that you want to see messages from: \n\n")
                             if friend_username == '':
                                 print("You didn't provide a username for your friend!")
@@ -216,16 +217,16 @@ def main():
                             print()
                             
                     elif sub_choice == "4":
-                        friend_username = input("Enter your friend's username:")
+                        friend_username = input("Enter your friend's username: ")
                         add_friend_result = add_user_friends(server_url, friend_username)
                         print("---------------------------")
-                        print(f"Trying to add {friend_username} as a friend. RESULT : {add_friend_result}")
+                        print(f"Trying to add {friend_username} as a friend.\nRESULT: {add_friend_result}")
                         print("---------------------------")
                         #reloading friends object after adding a friend
                         friends = get_user_friends(server_url)
                     elif sub_choice == "5":
                         print()
-                        print("---Friends---")
+                        print("---FRIENDS---")
                         print()
                         for friend in friends:
                             print(f"- {friend}")
@@ -252,9 +253,7 @@ def main():
                 print("Goodbye!")
                 break
             else:
-                print("Invalid choice. Please try again.")
+                print("Invalid choice.")
 
 if __name__ == "__main__":
     main()
-
-
