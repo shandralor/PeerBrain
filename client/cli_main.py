@@ -10,27 +10,56 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from encrypt_data import generate_keypair, load_private_key, detect_private_key, \
-    save_private_key, encrypt_message_symmetrical, decrypt_message, generate_sym_key, load_sym_key, \
-        detect_sym_key, detect_public_key, save_public_key, load_public_key
+from encrypt_data import (
+    generate_keypair,
+    load_private_key,
+    detect_private_key,
+    save_private_key,
+    encrypt_message_symmetrical,
+    decrypt_message,
+    generate_sym_key,
+    load_sym_key,
+    detect_sym_key,
+    detect_public_key,
+    save_public_key,
+    load_public_key,
+)
 
-from client_functions import create_token, get_token, get_account_info, get_sym_key, post_thought, register_user, \
-    add_user_friends, get_user_friends, get_all_users, get_thoughts_for_user, wrap_encrypt_sym_key, upload_keystore, \
-        login_with_token, log_out, reset_password, check_token
+from client_functions import (
+    create_token,
+    get_token,
+    get_account_info,
+    get_sym_key,
+    post_thought,
+    register_user,
+    add_user_friends,
+    get_user_friends,
+    get_all_users,
+    get_thoughts_for_user,
+    wrap_encrypt_sym_key,
+    upload_keystore,
+    login_with_token,
+    log_out,
+    reset_password,
+    check_token,
+)
 
 from fastapi import HTTPException
 
+
 def main():
-    """Display the main menu and prompt the user to choose an option."""    
+    """Display the main menu and prompt the user to choose an option."""
     # python cli_main.py -s dev FOR DEV SERVER OR python cli_main.py FOR NORMAL USE
     argParser = argparse.ArgumentParser()
-    argParser.add_argument("-s", "--server", help="Dev or live server", type=str, default="live")
+    argParser.add_argument(
+        "-s", "--server", help="Dev or live server", type=str, default="live"
+    )
     args = argParser.parse_args()
     if args.server == "dev":
         server_url = "http://127.0.0.1:8000/"
     else:
-        server_url = "https://peerbrain.teckhawk.be/"  
-    
+        server_url = "https://peerbrain.teckhawk.be/"
+
     authenticated = False
 
     print()
@@ -51,9 +80,9 @@ def main():
             print("4. Reset your password")
             print("Q to exit")
             choice = input(">> ")
-            
+
             if choice == "1":
-                
+
                 try:
                     if check_token(server_url):
                         authenticated = True
@@ -70,17 +99,19 @@ def main():
             elif choice == "2":
                 username = input("Enter your username: ")
                 user_email = input("Enter your email address: ")
-                user_password = getpass.getpass(prompt = "Please enter a password: ")
-                confirm_password = getpass.getpass(prompt = "Confirm your password: ")
+                user_password = getpass.getpass(prompt="Please enter a password: ")
+                confirm_password = getpass.getpass(prompt="Confirm your password: ")
                 if user_password == confirm_password:
-                    registration_result = register_user(server_url, username, user_email, user_password)
+                    registration_result = register_user(
+                        server_url, username, user_email, user_password
+                    )
                     print()
                     for key, value in registration_result:
                         print(f"{key} {value}")
                 else:
                     print()
                     print("Passwords do not match!")
-                print()    
+                print()
             elif choice == "3":
                 server_url = input("Enter the new server URL: ")
             elif choice == "4":
@@ -89,17 +120,19 @@ def main():
                 print()
                 reset_password(server_url, password_reset_username)
                 print()
-            elif choice == "Q" or choice=="q":
+            elif choice == "Q" or choice == "q":
                 break
             else:
-                print("Invalid choice")    
-                
+                print("Invalid choice")
+
     # Authenticated Menu
-    if authenticated:        
+    if authenticated:
         while True:
-            username, email = get_account_info(server_url) # Making current users username and email available to authenticated user
+            username, email = get_account_info(
+                server_url
+            )  # Making current users username and email available to authenticated user
             friends = get_user_friends(server_url)
-            
+
             print("\nMAIN MENU:")
             print()
             print("\nPlease choose an option:")
@@ -110,18 +143,20 @@ def main():
             print("Q to exit")
 
             choice = input(">> ")
-            
+
             if choice == "1":
                 while True:
                     print("\TECHNICAL MENU:")
                     print()
                     print("\nPlease choose an option:")
                     print()
-                    print("1. Generate SSH Keypair and symmetrical key(needed to create and read messages/tweets)")
+                    print(
+                        "1. Generate SSH Keypair and symmetrical key(needed to create and read messages/tweets)"
+                    )
                     print("B to return to main menu")
-                    
+
                     sub_choice = input(">> ")
-                    
+
                     # if sub_choice == "1":
                     #     all_users = get_all_users(server_url)
                     #     print()
@@ -131,26 +166,34 @@ def main():
                     #         print(user)
                     #         print()
                     if sub_choice == "1":
-                        if detect_private_key() and detect_sym_key() and detect_public_key():
+                        if (
+                            detect_private_key()
+                            and detect_sym_key()
+                            and detect_public_key()
+                        ):
                             print()
-                            print("Keys already exist, overwriting them will make your account irretrievable!")
+                            print(
+                                "Keys already exist, overwriting them will make your account irretrievable!"
+                            )
                             print()
                             print("Key creation canceled!")
-                        else:    
+                        else:
                             public_key, private_key = generate_keypair()
                             save_private_key(private_key)
                             save_public_key(public_key)
                             symmetric_key = generate_sym_key()
-                            upload_result = upload_keystore(server_url, public_key, symmetric_key)
+                            upload_result = upload_keystore(
+                                server_url, public_key, symmetric_key
+                            )
                             print("------------------------")
                             print(upload_result)
                             print("------------------------")
-                            
-                    elif sub_choice == "B" or sub_choice=="b":
+
+                    elif sub_choice == "B" or sub_choice == "b":
                         print("Returning to main menu...")
-                        break        
+                        break
                     else:
-                        print("Invalid choice")        
+                        print("Invalid choice")
             elif choice == "2":
                 while True:
                     print("\nACCOUNT MENU:")
@@ -166,63 +209,84 @@ def main():
                     print("5. View friends list")
                     print("--------------------------------")
                     print("B to return to main menu")
-                    
+
                     sub_choice = input(">> ")
-                    
+
                     if sub_choice == "1":
                         print("---YOUR ACCOUNT---")
                         print()
                         print(f"Username : {username}")
                         print(f"Email : {email}")
                     elif sub_choice == "2":
-                        #---MESSAGE POSTING CODE---#                       
+                        # ---MESSAGE POSTING CODE---#
                         print()
                         print(f"POSTING AS >>  {username}")
                         print()
-                        title = input("Please choose a title for your thought: \n\n>>TITLE: ")                        
+                        title = input(
+                            "Please choose a title for your thought: \n\n>>TITLE: "
+                        )
                         message = input("What would you like to post? \n\nMESSAGE>>: ")
                         sym_key, enc_mess = encrypt_message_symmetrical(message)
                         print()
-                        
-                        post_thought(server_url, username, title, enc_mess)                         
-                                     
+
+                        post_thought(server_url, username, title, enc_mess)
+
                         print("Message uploaded successfully!")
-                                            
+
                     elif sub_choice == "3":
                         get_user_friends(server_url)
                         print()
-                        
+
                         base_64_encr_sym_key = None
-                        friend_username = ''
-                        #error handling of faulty passwords
-                        while type(base_64_encr_sym_key) != str or friend_username == None:
-                            user_password = getpass.getpass(prompt ="Please confirm your password to get your messages: \n\n")
-                            friend_username = input("Please enter the username of the friend that you want to see messages from: \n\n")
-                            if friend_username == '':
+                        friend_username = ""
+                        # error handling of faulty passwords
+                        while (
+                            type(base_64_encr_sym_key) != str or friend_username == None
+                        ):
+                            user_password = getpass.getpass(
+                                prompt="Please confirm your password to get your messages: \n\n"
+                            )
+                            friend_username = input(
+                                "Please enter the username of the friend that you want to see messages from: \n\n"
+                            )
+                            if friend_username == "":
                                 print("You didn't provide a username for your friend!")
-                            base_64_encr_sym_key = get_sym_key(server_url, user_password, friend_username)
-                            
-                            
+                            base_64_encr_sym_key = get_sym_key(
+                                server_url, user_password, friend_username
+                            )
+
                         encrypted_sym_key = base64.b64decode(base_64_encr_sym_key)
-                                                
-                        for thought in get_thoughts_for_user(server_url, friend_username):
-                            print("-------------------------------------------------------")
+
+                        for thought in get_thoughts_for_user(
+                            server_url, friend_username
+                        ):
+                            print(
+                                "-------------------------------------------------------"
+                            )
                             print(f"TITLE:  {thought['title']}")
                             print()
                             print(f"RATING:  { thought['rating']}")
                             print()
-                            decrypted_message = decrypt_message(thought["content"].encode("utf-8"), encrypted_sym_key)
+                            decrypted_message = decrypt_message(
+                                thought["content"].encode("utf-8"), encrypted_sym_key
+                            )
                             print(f"MESSAGE:  { decrypted_message}")
-                            print("-------------------------------------------------------")     
+                            print(
+                                "-------------------------------------------------------"
+                            )
                             print()
-                            
+
                     elif sub_choice == "4":
                         friend_username = input("Enter your friend's username: ")
-                        add_friend_result = add_user_friends(server_url, friend_username)
+                        add_friend_result = add_user_friends(
+                            server_url, friend_username
+                        )
                         print("---------------------------")
-                        print(f"Trying to add {friend_username} as a friend.\nRESULT: {add_friend_result}")
+                        print(
+                            f"Trying to add {friend_username} as a friend.\nRESULT: {add_friend_result}"
+                        )
                         print("---------------------------")
-                        #reloading friends object after adding a friend
+                        # reloading friends object after adding a friend
                         friends = get_user_friends(server_url)
                     elif sub_choice == "5":
                         print()
@@ -231,9 +295,9 @@ def main():
                         for friend in friends:
                             print(f"- {friend}")
                             print()
-                    elif sub_choice == "B" or sub_choice=="b":
+                    elif sub_choice == "B" or sub_choice == "b":
                         print("Returning to main menu...")
-                        break        
+                        break
                     else:
                         print("Invalid choice")
             elif choice == "3":
@@ -241,19 +305,20 @@ def main():
                 authenticated == False
                 break
 
-                # file_path = "token.json"  
+                # file_path = "token.json"
                 # if os.path.exists(file_path):
                 #     os.remove(file_path)
                 #     print("Logged out successfully!")
-                #     
+                #
                 #     break
                 # else:
-                #     print("You are not logged in!")    
-            elif choice == "Q" or choice=="q":
+                #     print("You are not logged in!")
+            elif choice == "Q" or choice == "q":
                 print("Goodbye!")
                 break
             else:
                 print("Invalid choice.")
+
 
 if __name__ == "__main__":
     main()
