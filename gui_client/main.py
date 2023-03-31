@@ -15,6 +15,15 @@ from typing import List, Union
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+import sys, io
+sys.stdout = io.StringIO()
+sys.stderr = io.StringIO()
+
+## Version ##
+
+version = "0.0.1"
+
+##
 
 from encrypt_data import generate_keypair, load_private_key, detect_private_key, \
     save_private_key, encrypt_message_symmetrical, decrypt_message, generate_sym_key, load_sym_key, \
@@ -23,7 +32,7 @@ import os
 import sys
 import time
 import pyfiglet
-from client_functions import add_user_friends, check_token, get_all_users, get_thoughts_for_user, login, log_out, log_in_to_server, get_account_info, remove_user_friends, reset_password, register_user, upload_keystore, get_user_friends
+from client_functions import add_user_friends, check_token, get_all_users, get_sym_key, get_thoughts_for_user, login, log_out, log_in_to_server, get_account_info, remove_user_friends, reset_password, register_user, upload_keystore, get_user_friends
 import sentry_sdk
 from flask import Flask
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -42,13 +51,18 @@ sentry_sdk.init(
 
 app = Flask(__name__)
 
+
+
 argParser = argparse.ArgumentParser()
 argParser.add_argument("-s", "--server", help="Dev or live server", type=str, default="live")
+argParser.add_argument("-d", "--debug", help="Activate Debug mode", type=str, default="False")
 args = argParser.parse_args()
 if args.server == "dev":
     server_url = "https://74c6-213-219-142-51.eu.ngrok.io/"
 else:
     server_url = "https://peerbrain.teckhawk.be/"  
+
+
 
 
 @app.errorhandler(404)
@@ -73,7 +87,7 @@ def index():
     response = requests.get(url)
     if response.status_code == 200:
             data = response.json()
-            if data['version'] != "Alpha-v1":
+            if data['version'] != version:
                 return render_template('update.html', version=data['version'], changelog=data['changelog'], download=data['Download'])
             else:
                 if check_token(server_url):
@@ -100,14 +114,38 @@ def friends():
     else:
         return redirect("/", code=302)
 
+@app.route('/password-confirm/<friend>')
+def password_confirm(friend):
+    if check_token(server_url):
+        return render_template('enterpass.html', user=friend)
+    else:
+        return redirect("/", code=302)
+
 @app.route('/profile/<friend>')
 def show_profile(friend):
-    thoughts = get_thoughts_for_user(server_url, friend)
-    print(thoughts)
-    if thoughts == []:
-        no_thoughts = ('No thoughts found', '')
-        return render_template('profile.html', Friend=friend , thoughts=no_thoughts)
-    return render_template('profile.html', Friend=friend , thoughts=thoughts)
+        password = request.args.get('password')
+        base_64_encr_sym_key = get_sym_key(server_url, password, friend)
+        encrypted_sym_key = base64.b64decode(base_64_encr_sym_key)
+        for thought in get_thoughts_for_user(server_url, friend):
+            print("-------------------------------------------------------")
+            print(f"TITLE:  {thought['title']}")
+            print()
+            print(f"RATING:  { thought['rating']}")
+            print()
+            try:
+                decrypted_message = decrypt_message(thought["content"].encode("utf-8"), encrypted_sym_key)
+                print(f"MESSAGE:  { decrypted_message}")
+                output = (f"TITLE:  {thought['title']}", f"RATING:  { thought['rating']}", f"MESSAGE:  { decrypted_message}")
+            except FileNotFoundError as err:
+                print("Error decrypting message, you may need to generate your keys still!\nError:", err)
+                no_thoughts = ('No thoughts found', '')
+                return render_template('profile.html', Friend=friend , thoughts=no_thoughts)
+            except ValueError as err:
+                print("Please restart the programme to register your keys!\nError:", err)
+                no_thoughts = ('No thoughts found', '')
+                return render_template('profile.html', Friend=friend , thoughts=no_thoughts)
+            break
+        return render_template('profile.html', Friend=friend , thoughts=output)
 
 @app.route('/unfriend/<friend>')
 def unfriend(friend):
@@ -132,8 +170,10 @@ def addfriends():
     if request.method == 'POST':
         friend = request.form['friend']
         add_user_friends(server_url, friend)
+        friends = get_user_friends(server_url)
         friendg = 'You are now friends with', friend
-        redirect("/friends/", code=302, addfriend=friendg)    
+        print(friendg)
+        return render_template('friend.html', addfriend=friendg, friends=friends)
 
 @app.route('/resetpassword/')
 def resetpassword():
