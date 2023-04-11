@@ -190,7 +190,33 @@ def change_password(username, pw_to_hash)->str:
         logging.error("Error: %s", e)
     else:
         logging.info(f"Password changed successfully for user {username}")
+def add_otp_secret(username, key)
+    """
+    Add the OTP secret key to the user document in the database.
 
+    Args:
+        username (str): The username of the user to update.
+        key (str): The OTP secret key to add to the user document.
+
+    Returns:
+        None
+    """
+    query = {'username': username}
+    update = {'$set': {'otp_secret': key}}
+    try:
+        update_result = USERS.update_one(query, update)
+        if update_result.acknowledged:
+            return f"User {username} 2FA key changed!"       
+    except ConnectionFailure as e:
+        logging.error("Error: Database connection failed - %s", e)
+    except pymongo.errors.UpdateResult as e:
+        if e.matched_count == 0:
+            logging.error("No documents matched the query")     
+    except PyMongoError as e:
+        logging.error("Error: %s", e)
+    else:
+        logging.info(f"2FA key changed changed successfully for user {username}")
+        
 def confirm_registration_token(username:str)->None:
     """
     Activate a user account by setting the 'disabled' field to False and the 'confirmation_token' field to 'verified'
