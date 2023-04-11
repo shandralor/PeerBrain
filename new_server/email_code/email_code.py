@@ -8,15 +8,18 @@ from email.mime.multipart import MIMEMultipart
 load_dotenv()
 
 #---MAIL VARS---#
-SMTP_SERVER = "send.one.com"
+#SMTP_SERVER = "send.one.com"
+SMTP_SERVER = "smtp.sendgrid.net"
 SMTP_PORT = 465
 SENDER = os.environ.get("EMAIL_SENDER")
 PASSWORD = os.environ.get("EMAIL_PASS")
+USERNAME = os.environ.get("EMAIL_USERNAME")
 url = 'https://peerbrain.teckhawk.be/'
 #url = 'http://127.0.0.1:8000/'
 account_creation_link_text = 'CONFIRM ACCOUNT'
 reset_password_link_text = 'RESET PASSWORD'
 RESET_PASSWORD_ROUTE = os.environ.get("RESET_PASSWORD_ROUTE")
+
 
 #---FUNCTIONS---#
 def confirmation_mail(receiver:str, username:str, token:str):

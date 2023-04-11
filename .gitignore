@@ -21,3 +21,6 @@ client/backup-keys-dir/tata keys/message.key
 client/backup-keys-dir/tata keys/private_key.pem
 client/backup-keys-dir/tata keys/public_key.pem
 __pycache__/
+gui_client/keys/message.key
+gui_client/keys/private_key.pem
+gui_client/keys/public_key.pem

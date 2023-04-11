@@ -140,9 +140,14 @@ def push_message_to_database(speaker:str, receiver:str, message:str):
         return {"Error" : "No DM to yourself possible!"} 
     generated_database_key_hash = generate_database_key_hash(speaker, receiver)
     
-    order_number = get_message_status(generated_database_key_hash)[-1]["order_number"]
+    message_status = get_message_status(generated_database_key_hash)
     
-    if order_number:
+    print(message_status)
+      
+
+    if message_status:
+        order_number = message_status[-1]["order_number"]
+ 
         order_number+=1
         update = {
             "$push": {
