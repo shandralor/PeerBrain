@@ -15,6 +15,7 @@ class User(BaseModel): # pylint: disable=too-few-public-methods
         user_password (str, optional): The user's password. Defaults to None.
         disabled (bool, optional): Whether the user account is disabled. Defaults to False.
         friends (List[str], optional): A list of the user's friends. Defaults to an empty list.
+        otp_secret (str, optional): The user's one-time password secret. Defaults to None.
     """
     
     username: str
@@ -22,6 +23,7 @@ class User(BaseModel): # pylint: disable=too-few-public-methods
     user_password : Optional[str]
     disabled: bool = False
     friends: List[str] = []
+    otp_secret: Optional[str] = None
 
 class Reader(BaseModel): # pylint: disable=too-few-public-methods
     """A helper class for the message creation process.

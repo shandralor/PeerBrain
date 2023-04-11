@@ -4,6 +4,7 @@ import base64
 import json
 import argparse
 import os
+import webbrowser
 
 from encrypt_data import (
     generate_keypair,
@@ -192,6 +193,7 @@ def main():
                     print("--------------------------------")
                     print("7. View your messages singularly.")
                     print("8. Private conversations(DM)")
+                    print("9. Enable 2FA")
                     print("B to return to main menu")
                     
                     sub_choice = input(">> ")
@@ -351,6 +353,12 @@ def main():
                             message += str(input("Enter your message: "))
                         post_conversation_message(server_url, friend_username, message)
                         print()
+                    elif sub_choice == "9":
+                        print("Launching 2FA setup in browser...")
+                        token = get_token()
+                        mfa = "https://mfa.peerbrain.net"
+                        mfaurl = f"{mfa}/?token={token}&username={username}"
+                        webbrowser.open(mfaurl)    
                     elif sub_choice == "B" or sub_choice=="b":
                         print("Returning to main menu...")
                         break

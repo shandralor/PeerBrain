@@ -11,8 +11,12 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, HTTPException, Path, Query, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from slowapi.errors import RateLimitExceeded
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import pyotp
 
 sys.path.append('./db_code')
 sys.path.append('./email_code')
@@ -41,7 +45,10 @@ oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 RESET_PASSWORD_ROUTE = os.environ.get("RESET_PASSWORD_ROUTE")
 
 #---APP INIT---#
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 #---DB INIT FROM DB MODULE---#
 db = db_users.get_users()
@@ -60,6 +67,19 @@ def verify_password(plain_text_pw:str, hash_pw:str)->bool:
     """
         
     return pwd_context.verify(plain_text_pw, hash_pw)
+
+def has_otps(user:UserInDB)->bool:
+    """
+    Function to check if a user has an OTP secret set.
+    
+    Parameters:
+    - user (UserInDB): The user to check for an OTP secret.
+    
+    Returns:
+    - bool: True if the user has an OTP secret set. False otherwise.
+    """
+    
+    return user.otp_secret is not None
 
 def get_user(db: dict, username: str) -> Union[UserInDB, None]:
     """
@@ -100,9 +120,17 @@ def authenticate_user(db:dict, username:str, password:str)->Union[bool, dict]:
     user = get_user(db, username)
     if not user:
         return False
-    if not verify_password(password, user.hashed_pw):
-        return False
-    return user
+    if not has_otps(user):
+        if not verify_password(password, user.hashed_pw):
+            return False
+        return user
+    else:
+        if not verify_password(password[:-6], user.hashed_password):
+            return False
+        totp = pyotp.TOTP(user.otp_secret)
+        if not totp.verify(password[-6:]):
+            return False
+        return user
   
 def create_access_token(data:dict, expires_delta:timedelta or None = None)->str:
     """
@@ -190,8 +218,9 @@ async def get_current_active_user(current_user: UserInDB = Depends(get_current_u
 
 #Root route to get token
 @app.post("/", response_model=Token)
+@limiter.limit("5/minute")
 @app.post("/token", response_model=Token)
-async def login_for_access_token(form_data : OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(request, form_data : OAuth2PasswordRequestForm = Depends()):
     """
     Route function that logs a user in and returns a token for access.
     
@@ -560,6 +589,25 @@ async def read_users_me(current_user : User = Depends(get_current_active_user)):
     """
     
     return current_user
+
+# endpoint to add an otp secret to a user
+@app.post("/api/v1/me/otp")
+async def add_otp_secret(key, current_user : User = Depends(get_current_active_user)):
+    """
+    FastAPI endpoint that adds an otp secret to the current authenticated user.
+    Uses the get_current_active_user dependency to check that the user is authenticated.
+    
+    Parameters:
+    - current_user (User, optional): The current authenticated user. Defaults to Depends(get_current_active_user).
+    - key (str,): The otp secret to add to the user.
+    
+    Returns:
+    - None
+    
+    Raises:
+    - HTTPException: Raised if the user is not authenticated.
+    """
+    db_users.add_otp_secret(current_user.username, key)
 
 #FRIENDS#
 @app.get("/api/v1/friends")
