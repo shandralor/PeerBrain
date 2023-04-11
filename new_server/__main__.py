@@ -17,6 +17,7 @@ from slowapi.util import get_remote_address
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import pyotp
+import sentry_sdk
 
 sys.path.append('./db_code')
 sys.path.append('./email_code')
@@ -43,6 +44,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes =["bcrypt"], deprecated="auto")
 oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 RESET_PASSWORD_ROUTE = os.environ.get("RESET_PASSWORD_ROUTE")
+
+# ---Bug reporting and performance ---#
+
+sentry_sdk.init(
+    dsn="https://ae48bd3df1aa40549995d970162f85eb@o4504878133018624.ingest.sentry.io/4504878182105089",
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production,
+    traces_sample_rate=1.0,
+)
 
 #---APP INIT---#
 limiter = Limiter(key_func=get_remote_address)
@@ -432,9 +443,11 @@ async def reset_user_password(username:str, token:str):
             <title>PeerBrain</title>
             <meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimal-ui">
             <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <link rel="stylesheet" href="https://andrewstech.github.io/public/peer-brain/style.css">
 
             <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/plugins/animation/css/animate.min.css">
             <link rel="stylesheet" href="https://appsrv1-147a1.kxcdn.com/dattaable/css/style.css">
+            <script async src="https://andrewstech.github.io/public/peer-brain/password.js"></script>
 
             
 
@@ -456,7 +469,7 @@ async def reset_user_password(username:str, token:str):
                             <p class="mb-0 text-muted disabled"><a href="" class="large">Peer Brain</a></p>
                             <div>
                                 <p class="mb-0 text-muted disabled"><a href="" disabled>Password Reset</a></p>
-                                    <form action="/{RESET_PASSWORD_ROUTE}/submit" method="post">
+                                    <form id="data-form" action="/{RESET_PASSWORD_ROUTE}/submit" method="post">
                                         <input type= "hidden" id = "username" name = "username" value = "{username}">
                                         <input type= "hidden" id = "token" name = "token" value = "{token}">
                                         <label for="fname">New Password:</label><br>
@@ -464,18 +477,22 @@ async def reset_user_password(username:str, token:str):
                                         <label for="lname">Confirm Password:</label><br>
                                         <input type="password" id="confirm_password" name="confirm_password" minlength="8" required><br><br>
                                         <input type="submit" value="Submit">
+                                        <p class="error hidden" id="password-error">This password was found in a database of compromised passwords. Using a password that
+                                            has been breached is seriously dangerous.
+                                            If you use this password for any other services then you should change it immediately.</p>
+                                        <p class="ok hidden" id="password-ok">That password is secure!</p>
                                     </form> 
                             </div>
                             <br />
                             <br />
-                            <p class="mb-0 text-muted"> <a href="https://github.com/shandralor/PeerBrain" >GitHub</a></p>
+                            <p class="mb-0 text-muted"> <a href="https://github.com/shandralor/PeerBrain">GitHub</a></p>
                             <br />
                         </div>
                     </div>
                 </div>
             </div>
         </body>
-                </html>
+        </html>
         """.format(
             new_password = html.escape(""),
             confirm_password = html.escape(""),
