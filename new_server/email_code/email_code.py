@@ -71,7 +71,7 @@ def confirmation_mail(receiver:str, username:str, token:str):
     # Create secure connection with server and send email
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT , context=context) as server:
-        server.login(SENDER, PASSWORD)
+        server.login(USERNAME, PASSWORD)
         server.sendmail(
             SENDER, receiver, message.as_string()
         )
@@ -134,7 +134,7 @@ def password_reset_mail(receiver:str, username:str, token:str):
     # Create secure connection with server and send email
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT , context=context) as server:
-        server.login(SENDER, PASSWORD)
+        server.login(USERNAME, PASSWORD)
         server.sendmail(
             SENDER, receiver, message.as_string()
         )
