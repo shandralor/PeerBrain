@@ -1,7 +1,7 @@
 cryptography
 deta
 requests
-fastapi
+fastapi==0.92.0
 jose
 passlib
 pydantic

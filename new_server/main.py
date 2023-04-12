@@ -34,7 +34,7 @@ from models import (KeyStore,
                     PasswordResetUser, 
                     MessageObject)
 
-#---LOAD ENV VARS---#
+#---LOAD ENV VARS----#
 load_dotenv()
 
 #---SECURITY SETUP---#
@@ -56,10 +56,10 @@ sentry_sdk.init(
 )
 
 #---APP INIT---#
-limiter = Limiter(key_func=get_remote_address)
+# limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# app.state.limiter = limiter
+# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 #---DB INIT FROM DB MODULE---#
 db = db_users.get_users()
@@ -136,12 +136,13 @@ def authenticate_user(db:dict, username:str, password:str)->Union[bool, dict]:
             return False
         return user
     else:
-        if not verify_password(password[:-6], user.hashed_password):
+        if not verify_password(password[:-6], user.hashed_pw):
             return False
         totp = pyotp.TOTP(user.otp_secret)
         if not totp.verify(password[-6:]):
             return False
         return user
+  
   
 def create_access_token(data:dict, expires_delta:timedelta or None = None)->str:
     """
@@ -229,9 +230,9 @@ async def get_current_active_user(current_user: UserInDB = Depends(get_current_u
 
 #Root route to get token
 @app.post("/", response_model=Token)
-@limiter.limit("5/minute")
+# @limiter.limit("5/minute")
 @app.post("/token", response_model=Token)
-async def login_for_access_token(request, form_data : OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token( form_data : OAuth2PasswordRequestForm = Depends()):
     """
     Route function that logs a user in and returns a token for access.
     
@@ -624,7 +625,7 @@ async def add_otp_secret(key, current_user : User = Depends(get_current_active_u
     Raises:
     - HTTPException: Raised if the user is not authenticated.
     """
-    db_users.add_otp_secret(current_user.username, key)
+    return db_users.add_otp_secret(current_user.username, key)
 
 #FRIENDS#
 @app.get("/api/v1/friends")
