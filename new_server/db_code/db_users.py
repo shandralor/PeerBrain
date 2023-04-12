@@ -190,7 +190,7 @@ def change_password(username, pw_to_hash)->str:
         logging.error("Error: %s", e)
     else:
         logging.info(f"Password changed successfully for user {username}")
-def add_otp_secret(username, key)
+def add_otp_secret(username, key):
     """
     Add the OTP secret key to the user document in the database.
 
