@@ -366,10 +366,6 @@ def login(server_url:str, username:str, password:str)->None:
 
     # Set the JWT token in token.json file
     create_token(jwt_token)
-
-    print()
-    print("Logged in successfully!")
-    print()
         
     return True
     
