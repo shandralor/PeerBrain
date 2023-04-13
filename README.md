@@ -1,6 +1,25 @@
 
-# Peer Brain - A Decentralized P2P Social Network App
 
+
+All PeerBrain projects have moved to a dedicated GitHub organisation.
+https://github.com/PeerBrain
+
+Please note, the old repository, shandralor/PeerBrain is no longer used and has been replaced with the new repos in the organisation.
+The CLI, GUI and server are now in separate repositories.
+
+Significant Repo Changes:
+The CLI client is now here: https://github.com/PeerBrain/cli-client
+The GUI client is now here: https://github.com/PeerBrain/gui-client
+The server source code is now here: https://github.com/PeerBrain/server
+
+Any other repositories related to the project have also been moved to the GitHub organisation.
+
+If you want more updates about Peer Brain projects, make sure to follow the GitHub organisation and star the new repositories! 
+-------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------
+
+# Peer Brain - A Decentralized P2P Social Network App
 
 This open-source project implements a peer-to-peer social network app where users are represented as brain cells. It is completely decentralized and there is no central authority or recommendation algorithms, nor is there any censorship. Messages are propagated between users in a meritocratic way, and users have control over the strength of the signals they receive. This allows for more free and open communication between users.
 
